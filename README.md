@@ -1,2 +1,2 @@
 # ProjetoDe.NET
-Estou estudando para me aprimora na dotnet, .net, c# para coseguir criar um site bom.
+Estou estudando para me aprimorar na dotnet, .net, c# para conseguir criar um site bom.
