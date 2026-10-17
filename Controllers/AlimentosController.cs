@@ -35,8 +35,30 @@ namespace OngDoacao.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Cadastro(Alimento alimento)
         {
+            if (string.IsNullOrWhiteSpace(alimento.Nome) || alimento.Nome.Length > 120)
+            {
+                ModelState.AddModelError(nameof(alimento.Nome), "Informe um nome com até 120 caracteres.");
+            }
+
+            if (string.IsNullOrWhiteSpace(alimento.CodigoDeBarras) || alimento.CodigoDeBarras.Length > 32 ||
+                alimento.CodigoDeBarras.Any(c => c < '0' || c > '9'))
+            {
+                ModelState.AddModelError(nameof(alimento.CodigoDeBarras), "Informe um código de barras numérico com até 32 dígitos.");
+            }
+
+            if (alimento.DataVencimento.Date < DateTime.Today)
+            {
+                ModelState.AddModelError(nameof(alimento.DataVencimento), "A data de vencimento não pode estar no passado.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(alimento);
+            }
+
             _context.Alimentos.Add(alimento);
             _context.SaveChanges();
 
@@ -47,6 +69,7 @@ namespace OngDoacao.Controllers
 
         // 3. NOVA AÇÃO: Dar baixa num item (ex: se estragou ou foi entregue avulso)
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Remover(int id)
         {
             var item = _context.Alimentos.Find(id);

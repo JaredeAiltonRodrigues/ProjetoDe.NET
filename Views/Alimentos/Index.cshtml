@@ -32,6 +32,7 @@
     .s-valido { background: #dff0e6; color: #14452d; }
     .s-semana { background: var(--grain); color: var(--ink); }
     .s-vencido { background: var(--alert); color: #fff; }
+    .s-esgotado { background: #e9ecef; color: #495057; }
     .btn-forest { background: var(--forest); color: #fff; font-weight: 600; border-radius: 4px; }
     .btn-forest:hover { background: #17402f; color: #fff; }
     .btn-check:checked + .btn-outline-dark { background: var(--ink); color: #fff; }
@@ -90,6 +91,8 @@
             <label class="btn btn-outline-dark" for="f-semana">Vencem em breve</label>
             <input type="radio" class="btn-check" name="filtro" id="f-vencido" value="vencido">
             <label class="btn btn-outline-dark" for="f-vencido">Vencidos</label>
+            <input type="radio" class="btn-check" name="filtro" id="f-esgotado" value="esgotado">
+            <label class="btn btn-outline-dark" for="f-esgotado">Esgotados</label>
         </div>
         <span id="contador" class="text-muted ms-auto" aria-live="polite"></span>
     </div>
@@ -121,7 +124,7 @@
                 @foreach (var item in itens)
                 {
                     var dias = (item.DataVencimento.Date - hoje).Days;
-                    var situacao = dias < 0 ? "vencido" : dias <= 7 ? "semana" : "valido";
+                    var situacao = item.Quantidade <= 0 ? "esgotado" : dias < 0 ? "vencido" : dias <= 7 ? "semana" : "valido";
                     var prazo = dias == 0 ? "Vence hoje" : dias == 1 ? "Vence amanhã" : $"Vence em {dias} dias";
                     var busca = ((item.Nome ?? "") + " " + (item.CodigoDeBarras ?? "")).ToLowerInvariant();
 
@@ -138,6 +141,10 @@
                             else if (situacao == "semana")
                             {
                                 <span class="badge-situacao s-semana">@prazo</span>
+                            }
+                            else if (situacao == "esgotado")
+                            {
+                                <span class="badge-situacao s-esgotado">Sem saldo</span>
                             }
                             else
                             {

@@ -14,5 +14,26 @@ namespace OngDoacao.Data
         public DbSet<MembroEquipe> Equipe { get; set; }
         public DbSet<TransacaoFinanceira> Financeiro { get; set; }
         public DbSet<EscalaVoluntario> Escalas { get; set; }
+        public DbSet<DistribuicaoDoacao> Distribuicoes { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<DistribuicaoDoacao>()
+                .HasOne(distribuicao => distribuicao.Beneficiario)
+                .WithMany()
+                .HasForeignKey(distribuicao => distribuicao.BeneficiarioId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<DistribuicaoDoacao>()
+                .HasMany(distribuicao => distribuicao.Itens)
+                .WithOne(item => item.DistribuicaoDoacao)
+                .HasForeignKey(item => item.DistribuicaoDoacaoId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DistribuicaoDoacao>()
+                .HasIndex(distribuicao => new { distribuicao.Status, distribuicao.HorarioRetirada });
+
+            base.OnModelCreating(modelBuilder);
+        }
     }
 }   

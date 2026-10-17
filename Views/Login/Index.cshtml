@@ -2,7 +2,7 @@
     ViewData["Title"] = "Entrar no Sistema";
 }
 
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
         <div class="col-md-5">
             <div class="card shadow border-0">
@@ -14,19 +14,19 @@
                     
                     @if (TempData["Erro"] != null)
                     {
-                        <div class="alert alert-danger text-center fw-bold">@TempData["Erro"]</div>
+                        <div class="alert alert-danger" role="alert">@TempData["Erro"]</div>
                     }
 
                     <form asp-action="Entrar" method="post">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Nome de Usuário</label>
-                            <input type="text" name="nome" class="form-control form-control-lg" required />
+                            <label for="nome" class="form-label fw-bold">Nome de usuário</label>
+                            <input id="nome" type="text" name="nome" class="form-control form-control-lg" autocomplete="username" required />
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Senha</label>
-                            <input type="password" name="senha" class="form-control form-control-lg" required />
+                            <label for="senha" class="form-label fw-bold">Senha</label>
+                            <input id="senha" type="password" name="senha" class="form-control form-control-lg" autocomplete="current-password" required />
                         </div>
-                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">Entrar no Sistema</button>
+                        <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">Entrar</button>
                     </form>
                     
                 </div>

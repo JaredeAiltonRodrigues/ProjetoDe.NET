@@ -4,20 +4,26 @@
     ViewData["Title"] = "Gestão de Equipe";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Equipe e Voluntários (RH)</h2>
-        <a href="/Equipe/Cadastrar" class="btn btn-success fw-bold">+ Novo Membro</a>
+<div class="container mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Equipe e voluntários</h1>
+            <p class="text-muted mb-0">Gerencie vínculos e permissões de acesso.</p>
+        </div>
+        <a asp-action="Cadastrar" class="btn btn-success fw-bold">Novo membro</a>
     </div>
 
     @if (TempData["MensagemSucesso"] != null)
     {
-        <div class="alert alert-success fw-bold">@TempData["MensagemSucesso"]</div>
+        <div class="alert alert-success" role="status">@TempData["MensagemSucesso"]</div>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Erro"]</div>
     }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0">
+    <div class="table-responsive border rounded">
+            <table class="table table-hover align-middle mb-0">
                 <thead class="table-dark">
                     <tr>
                         <th>Nome</th>
@@ -25,9 +31,14 @@
                         <th>Vínculo</th>
                         <th>Perfil (Login)</th>
                         <th>Status</th>
+                        <th scope="col">Acesso</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-5">Nenhum membro cadastrado.</td></tr>
+                    }
                     @foreach (var p in Model)
                     {
                         <tr>
@@ -41,10 +52,17 @@
                                 @if(p.Ativo) { <span class="badge bg-success">Ativo</span> }
                                 else { <span class="badge bg-danger">Inativo</span> }
                             </td>
+                            <td>
+                                <form asp-action="AlterarStatus" method="post">
+                                    <input type="hidden" name="id" value="@p.Id">
+                                    <button type="submit" class="btn btn-sm @(p.Ativo ? "btn-outline-danger" : "btn-outline-success")">
+                                        @(p.Ativo ? "Desativar" : "Ativar")
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                     }
                 </tbody>
             </table>
-        </div>
     </div>
 </div>

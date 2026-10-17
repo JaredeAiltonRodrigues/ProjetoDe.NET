@@ -14,15 +14,17 @@ namespace OngDoacao.Models
         [Required]
         public string? Descricao { get; set; } // Ex: "Doação PIX Anônimo", "Compra de Arroz", "Conta de Luz da ONG"
         
+        [Range(0.01, 1000000000)]
         [Required]
         public decimal Valor { get; set; }
         
-        [Required]
+        [Required, RegularExpression("^(Entrada|Saída)$")]
         public string? Tipo { get; set; } // "Entrada" (Doações) ou "Saída" (Gastos)
         
         public DateTime DataTransacao { get; set; } = DateTime.Now;
         
 // --- DADOS PARA OPEN FINANCE E PIX ---
+        [RegularExpression("^(PIX|Dinheiro|Transferência)$")]
         public string? MetodoPagamento { get; set; } // "PIX", "Transferência", "Boleto"
         public string? IdentificacaoPagador { get; set; } // Nome ou CPF de quem enviou o PIX
         public string? IdTransacaoBancaria { get; set; } // ID retornado pela API do Banco (Open Finance)

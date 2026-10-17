@@ -2,7 +2,7 @@
 @using System.Globalization
 
 @{
-    ViewData["Title"] = "Contabilidade e Open Finance";
+    ViewData["Title"] = "Livro caixa";
 
     var br = new CultureInfo("pt-BR");
     var lista = Model.ToList();                       // evita enumerar a coleção várias vezes
@@ -44,9 +44,9 @@
 
 <div class="container fin mt-4 mb-5">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-        <h1 class="mb-0">Contabilidade e Open Finance</h1>
+        <h1 class="mb-0">Livro caixa</h1>
         <div class="d-flex flex-wrap gap-2 no-print">
-            <button type="button" onclick="window.print()" class="btn btn-outline-dark fw-semibold">Exportar para PDF</button>
+            <button type="button" onclick="window.print()" class="btn btn-outline-dark fw-semibold">Imprimir / salvar PDF</button>
             <a asp-controller="Financeiro" asp-action="NovaTransacao" class="btn btn-forest">Novo registro manual</a>
         </div>
     </div>
@@ -63,9 +63,9 @@
     <div class="row g-3 mb-4">
         <div class="col-md-4">
             <section class="resumo destaque" aria-label="Saldo em conta">
-                <div>Saldo em conta (livro caixa)</div>
+                <div>Saldo registrado</div>
                 <div class="valor @(saldo < 0 ? "negativo" : "")">@saldo.ToString("C2", br)</div>
-                <small>Sincronizado com o Open Finance</small>
+                <small>Calculado a partir dos lançamentos registrados</small>
             </section>
         </div>
         <div class="col-md-4">
@@ -86,7 +86,7 @@
 
     <!-- Movimentos -->
     <section aria-labelledby="titulo-historico">
-        <h2 id="titulo-historico" class="h5 mb-3">Histórico de transações e PIX</h2>
+        <h2 id="titulo-historico" class="h5 mb-3">Histórico de transações</h2>
         <div class="table-responsive border rounded">
             <table class="table table-hover mb-0 tabela">
                 <thead>
@@ -112,8 +112,8 @@
                     @foreach (var t in lista)
                     {
                         bool entrada = t.Tipo == "Entrada";
-                        string chave = t.ChaveAcessoNFe;
-                        string chaveCurta = chave is { Length: > 10 } ? chave[..10] + "…" : chave;
+                        string? chave = t.ChaveAcessoNFe;
+                        string chaveCurta = chave is { Length: > 10 } ? chave[..10] + "…" : chave ?? "Não informada";
 
                         <tr>
                             <td class="text-nowrap">@t.DataTransacao.ToString("dd/MM/yyyy HH:mm")</td>
@@ -153,6 +153,11 @@
                                 {
                                     <span class="badge bg-success">Emitida</span>
                                     <small class="text-muted d-block" title="@chave">Chave: @chaveCurta</small>
+                                }
+                                else if (t.StatusSefaz == "Simulada")
+                                {
+                                    <span class="badge bg-info text-dark">Simulação</span>
+                                    <small class="text-muted d-block">Sem validade fiscal</small>
                                 }
                                 else
                                 {

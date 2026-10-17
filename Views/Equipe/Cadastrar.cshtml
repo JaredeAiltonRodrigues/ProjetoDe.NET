@@ -4,33 +4,35 @@
     ViewData["Title"] = "Cadastrar Membro";
 }
 
-<div class="container mt-4">
-    <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
-        <div class="card-header bg-dark text-white">
-            <h4 class="mb-0">Cadastrar Novo Usuário/Voluntário</h4>
-        </div>
-        <div class="card-body p-4 bg-light">
+<div class="container mt-4 mb-5" style="max-width: 800px;">
+    <nav aria-label="Navegação"><a asp-action="Index">Voltar para equipe</a></nav>
+    <h1 class="h2 mt-3 mb-4">Cadastrar membro da equipe</h1>
+    <section class="border rounded p-4 bg-white">
             <form asp-action="Cadastrar" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
                 
                 <h5 class="text-primary border-bottom pb-2 mb-3">Dados Pessoais</h5>
                 <div class="row">
                     <div class="col-md-8 mb-3">
-                        <label class="form-label fw-bold">Nome Completo</label>
-                        <input asp-for="Nome" class="form-control" required />
+                        <label asp-for="Nome" class="form-label fw-bold">Nome completo / usuário</label>
+                        <input asp-for="Nome" class="form-control" autocomplete="username" maxlength="120" required />
+                        <span asp-validation-for="Nome" class="text-danger small"></span>
                     </div>
                     <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">Telefone</label>
-                        <input asp-for="Telefone" class="form-control" placeholder="(11) 99999-9999" />
+                        <label asp-for="Telefone" class="form-label fw-bold">Telefone</label>
+                        <input asp-for="Telefone" type="tel" class="form-control" autocomplete="tel" placeholder="(11) 99999-9999" />
+                        <span asp-validation-for="Telefone" class="text-danger small"></span>
                     </div>
                 </div>
 
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Cargo ou Função</label>
+                        <label asp-for="CargoOuFuncao" class="form-label fw-bold">Cargo ou função</label>
                         <input asp-for="CargoOuFuncao" class="form-control" placeholder="Ex: Triagem, Motorista..." required />
+                        <span asp-validation-for="CargoOuFuncao" class="text-danger small"></span>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Tipo de Vínculo</label>
+                        <label asp-for="TipoVinculo" class="form-label fw-bold">Tipo de vínculo</label>
                         <select asp-for="TipoVinculo" class="form-select" required>
                             <option value="Voluntário">Voluntário</option>
                             <option value="Funcionário Remunerado">Funcionário Remunerado</option>
@@ -41,8 +43,10 @@
                 <h5 class="text-primary border-bottom pb-2 mt-4 mb-3">Dados de Acesso (Login)</h5>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Senha de Acesso</label>
-                        <input asp-for="Senha" type="text" class="form-control" required />
+                        <label asp-for="Senha" class="form-label fw-bold">Senha inicial</label>
+                        <input asp-for="Senha" type="password" class="form-control" autocomplete="new-password" minlength="12" required />
+                        <div class="form-text">Use pelo menos 12 caracteres. A senha será armazenada com hash.</div>
+                        <span asp-validation-for="Senha" class="text-danger small"></span>
                     </div>
                     <div class="col-md-6 mb-4">
                         <label class="form-label fw-bold">Perfil de Acesso no Sistema</label>
@@ -54,8 +58,14 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">Salvar e Liberar Acesso</button>
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-success fw-bold">Salvar membro</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
             </form>
-        </div>
-    </div>
+    </section>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

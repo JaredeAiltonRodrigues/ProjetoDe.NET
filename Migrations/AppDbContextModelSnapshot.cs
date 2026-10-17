@@ -15,7 +15,7 @@ namespace OngDoacao.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
             modelBuilder.Entity("OngDoacao.Models.Alimento", b =>
                 {
@@ -74,6 +74,76 @@ namespace OngDoacao.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Beneficiarios");
+                });
+
+            modelBuilder.Entity("OngDoacao.Models.DistribuicaoDoacao", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("BeneficiarioId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("DataEntrega")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DataNotificacao")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DataReserva")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DetalheNotificacao")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("HorarioRetirada")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("StatusNotificacao")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BeneficiarioId");
+
+                    b.HasIndex("Status", "HorarioRetirada");
+
+                    b.ToTable("Distribuicoes");
+                });
+
+            modelBuilder.Entity("OngDoacao.Models.DistribuicaoDoacaoItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CodigoDeBarras")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("DataVencimento")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("DistribuicaoDoacaoId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("NomeAlimento")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Quantidade")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistribuicaoDoacaoId");
+
+                    b.ToTable("DistribuicaoDoacaoItem");
                 });
 
             modelBuilder.Entity("OngDoacao.Models.EscalaVoluntario", b =>
@@ -190,6 +260,28 @@ namespace OngDoacao.Migrations
                     b.ToTable("Financeiro");
                 });
 
+            modelBuilder.Entity("OngDoacao.Models.DistribuicaoDoacao", b =>
+                {
+                    b.HasOne("OngDoacao.Models.Beneficiario", "Beneficiario")
+                        .WithMany()
+                        .HasForeignKey("BeneficiarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Beneficiario");
+                });
+
+            modelBuilder.Entity("OngDoacao.Models.DistribuicaoDoacaoItem", b =>
+                {
+                    b.HasOne("OngDoacao.Models.DistribuicaoDoacao", "DistribuicaoDoacao")
+                        .WithMany("Itens")
+                        .HasForeignKey("DistribuicaoDoacaoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DistribuicaoDoacao");
+                });
+
             modelBuilder.Entity("OngDoacao.Models.EscalaVoluntario", b =>
                 {
                     b.HasOne("OngDoacao.Models.MembroEquipe", "Membro")
@@ -199,6 +291,11 @@ namespace OngDoacao.Migrations
                         .IsRequired();
 
                     b.Navigation("Membro");
+                });
+
+            modelBuilder.Entity("OngDoacao.Models.DistribuicaoDoacao", b =>
+                {
+                    b.Navigation("Itens");
                 });
 #pragma warning restore 612, 618
         }

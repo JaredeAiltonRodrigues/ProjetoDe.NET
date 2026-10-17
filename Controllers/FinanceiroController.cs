@@ -24,7 +24,7 @@ namespace OngDoacao.Controllers
             
             ViewBag.SaldoTotal = transacoes.Where(t => t.Tipo == "Entrada").Sum(t => t.Valor) - 
                                  transacoes.Where(t => t.Tipo == "Saída").Sum(t => t.Valor);
-            ViewBag.PendenteNfe = transacoes.Count(t => t.ExigeNotaFiscal && t.StatusSefaz != "Emitida");
+            ViewBag.PendenteNfe = transacoes.Count(t => t.ExigeNotaFiscal && t.StatusSefaz == "Pendente");
 
             return View(transacoes);
         }
@@ -36,8 +36,19 @@ namespace OngDoacao.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult NovaTransacao(TransacaoFinanceira transacao)
         {
+            if (transacao.Descricao?.Length > 160)
+            {
+                ModelState.AddModelError(nameof(transacao.Descricao), "A descrição deve ter até 160 caracteres.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(transacao);
+            }
+
             transacao.DataTransacao = DateTime.Now;
             
             // Lógica inicial para SEFAZ (Futuramente ligada via API)
@@ -53,56 +64,30 @@ namespace OngDoacao.Controllers
             return RedirectToAction("Index");
         }
 
-        // Endpoint simulado para receber Webhooks do Banco (Ex: PIX recebido)
+        // Bloqueado até existir validação de assinatura fornecida pelo banco.
         [HttpPost]
-        [AllowAnonymous] // Permite que a API do banco aceda a este endpoint
-        public IActionResult WebhookPixRecebido([FromBody] TransacaoPixDto payload)
+        [AllowAnonymous]
+        public IActionResult WebhookPixRecebido()
         {
-            var novaDoacao = new TransacaoFinanceira
-            {
-                Descricao = $"Doação PIX - {payload.Mensagem}",
-                Valor = payload.Valor,
-                Tipo = "Entrada",
-                MetodoPagamento = "PIX",
-                IdentificacaoPagador = payload.NomePagador,
-                IdTransacaoBancaria = payload.TxId,
-                Conciliado = true,
-                ExigeNotaFiscal = true,
-                StatusSefaz = "Pendente" 
-            };
-
-            _context.Financeiro.Add(novaDoacao);
-            _context.SaveChanges();
-
-            return Ok();
+            return StatusCode(StatusCodes.Status503ServiceUnavailable,
+                "Webhook indisponível até que a assinatura do provedor bancário seja configurada.");
         }
 
-        // SIMULADOR DE SEFAZ PARA TESTES
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult SimularEmissaoNfe(int id)
         {
             var transacao = _context.Financeiro.Find(id);
             
             if (transacao != null && transacao.ExigeNotaFiscal && transacao.StatusSefaz == "Pendente")
             {
-                // Finge que enviou para a API da Receita Federal e demorou 1 segundo
-                System.Threading.Thread.Sleep(1000); 
-
-                // Gera uma Chave de Acesso Falsa de 44 dígitos para simular a SEFAZ
-                Random random = new Random();
-                string chaveFalsa = "";
-                for (int i = 0; i < 44; i++) {
-                    chaveFalsa += random.Next(0, 10).ToString();
-                }
-
-                // Atualiza o banco de dados
-                transacao.StatusSefaz = "Emitida";
-                transacao.ChaveAcessoNFe = chaveFalsa;
+                transacao.StatusSefaz = "Simulada";
+                transacao.ChaveAcessoNFe = null;
                 
                 _context.Financeiro.Update(transacao);
                 _context.SaveChanges();
 
-                TempData["MensagemSucesso"] = $"Nota Fiscal Simulada com Sucesso! Chave: {chaveFalsa}";
+                TempData["MensagemSucesso"] = "Simulação registrada. Nenhuma NF-e foi emitida pela SEFAZ.";
             }
             else
             {
@@ -113,12 +98,4 @@ namespace OngDoacao.Controllers
         }
     } // <-- Fim da classe FinanceiroController
 
-    // DTO para mapear os dados que o Banco envia via API
-    public class TransacaoPixDto
-    {
-        public decimal Valor { get; set; }
-        public string? NomePagador { get; set; }
-        public string? TxId { get; set; }
-        public string? Mensagem { get; set; }
-    }
 } // <-- Fim do namespace

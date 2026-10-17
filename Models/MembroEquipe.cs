@@ -14,15 +14,16 @@ namespace OngDoacao.Models
         [Required]
         public string? CargoOuFuncao { get; set; }
         
+        [Phone]
         public string? Telefone { get; set; }
         
         public string? TipoVinculo { get; set; }
         
         // --- NOVOS CAMPOS PARA O LOGIN ---
-        [Required]
+        [Required, MinLength(12)]
         public string? Senha { get; set; } 
         
-        [Required]
+        [Required, RegularExpression("^(Admin|Estoque|Financeiro)$")]
         public string? PerfilAcesso { get; set; } // Pode ser: "Admin", "Estoque" ou "Financeiro"
         // ---------------------------------
 

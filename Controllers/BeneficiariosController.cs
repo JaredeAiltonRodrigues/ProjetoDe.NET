@@ -29,8 +29,42 @@ namespace OngDoacao.Controllers
 
         [AllowAnonymous]
         [HttpPost]
-        public IActionResult Cadastro(Beneficiario beneficiario)
+        [ValidateAntiForgeryToken]
+        public IActionResult Cadastro(
+            [Bind(nameof(Beneficiario.Nome), nameof(Beneficiario.Cpf), nameof(Beneficiario.TamanhoFamilia), nameof(Beneficiario.Telefone), nameof(Beneficiario.Email))]
+            Beneficiario beneficiario,
+            bool aceitePrivacidade)
         {
+            if (string.IsNullOrWhiteSpace(beneficiario.Nome) || beneficiario.Nome.Length > 120)
+            {
+                ModelState.AddModelError(nameof(beneficiario.Nome), "Informe um nome com até 120 caracteres.");
+            }
+
+            if (string.IsNullOrWhiteSpace(beneficiario.Cpf))
+            {
+                ModelState.AddModelError(nameof(beneficiario.Cpf), "Informe o CPF.");
+            }
+
+            if (string.IsNullOrWhiteSpace(beneficiario.Telefone) || beneficiario.Telefone.Length > 30)
+            {
+                ModelState.AddModelError(nameof(beneficiario.Telefone), "Informe um telefone com até 30 caracteres.");
+            }
+
+            if (beneficiario.Email?.Length > 254)
+            {
+                ModelState.AddModelError(nameof(beneficiario.Email), "O e-mail deve ter até 254 caracteres.");
+            }
+
+            if (!aceitePrivacidade)
+            {
+                ModelState.AddModelError(string.Empty, "É necessário aceitar o aviso de privacidade para enviar o cadastro.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return View(beneficiario);
+            }
+
             beneficiario.DataCadastro = DateTime.Now;
             beneficiario.StatusFila = "Aguardando";
             
@@ -61,26 +95,49 @@ namespace OngDoacao.Controllers
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult AtualizarStatus(int id, string novoStatus)
         {
             var pessoa = _context.Beneficiarios.Find(id);
-            if (pessoa != null)
+            if (pessoa == null)
             {
-                pessoa.StatusFila = novoStatus;
-                _context.Beneficiarios.Update(pessoa);
-                _context.SaveChanges();
-                TempData["MensagemSucesso"] = $"O status de {pessoa.Nome} foi atualizado para '{novoStatus}'.";
+                return NotFound();
             }
+
+            if (pessoa.StatusFila != "Cesta Reservada" || novoStatus != "Cesta Entregue")
+            {
+                return BadRequest();
+            }
+
+            pessoa.StatusFila = novoStatus;
+            var distribuicao = _context.Distribuicoes
+                .Where(item => item.BeneficiarioId == pessoa.Id && item.Status == "Reservada")
+                .OrderByDescending(item => item.DataReserva)
+                .FirstOrDefault();
+            if (distribuicao != null)
+            {
+                distribuicao.Status = "Entregue";
+                distribuicao.DataEntrega = DateTime.Now;
+            }
+            _context.SaveChanges();
+            TempData["MensagemSucesso"] = $"O status de {pessoa.Nome} foi atualizado para '{novoStatus}'.";
             return RedirectToAction("Index");
         }
 
         [Authorize(Roles = "Admin")]
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Remover(int id)
         {
             var pessoa = _context.Beneficiarios.Find(id);
             if (pessoa != null)
             {
+                if (_context.Distribuicoes.Any(item => item.BeneficiarioId == id))
+                {
+                    TempData["Erro"] = "Este cadastro possui histórico de distribuição e não pode ser removido.";
+                    return RedirectToAction("Index");
+                }
+
                 _context.Beneficiarios.Remove(pessoa);
                 _context.SaveChanges();
                 TempData["MensagemSucesso"] = "O registo foi removido do sistema com sucesso.";

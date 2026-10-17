@@ -1,11 +1,8 @@
-﻿@{
+﻿@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
+@{
     ViewData["Title"] = "Política de Privacidade";
-
-    // TODO: preencher com os dados reais da ONG.
-    const string razaoSocial = "ONG Alimento para Todos";
-    const string cnpj = "00.000.000/0001-00";
-    const string emailPrivacidade = "privacidade@ongalimento.org.br";
-    const string atualizadoEm = "11 de outubro de 2026";
+    var razaoSocial = Configuration["Privacy:ControllerName"] ?? "ONG Alimento para Todos";
+    var emailPrivacidade = Configuration["Privacy:ContactEmail"];
 }
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -34,14 +31,17 @@
     :focus-visible { outline: 3px solid var(--grain); outline-offset: 3px; }
     html { scroll-behavior: smooth; }
     @@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-    @@media (max-width: 991.98px) { .policy-nav { position: static; margin-bottom: 2rem; } }
+    @@media (max-width: 991.98px) {
+        .policy-nav { position: static; margin-bottom: 2rem; }
+        .policy-body .row { --bs-gutter-x: 1.5rem; }
+    }
 </style>
 
 <header class="policy-head">
     <div class="container">
         <h1>@ViewData["Title"]</h1>
-        <p class="mt-3 mb-1">Explicamos quais dados pessoais a @razaoSocial coleta, por que coleta e como você pode controlá-los, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>
-        <p class="text-muted mb-0">Atualizada em @atualizadoEm</p>
+        <p class="mt-3 mb-1">Esta página descreve os dados tratados pelas funções disponíveis neste sistema e como solicitar informações sobre eles.</p>
+        <p class="text-muted mb-0">Revisada em 17 de outubro de 2026</p>
     </div>
 </header>
 
@@ -65,9 +65,12 @@
             </nav>
 
             <main class="col-lg-9">
+                <div class="alert alert-warning" role="status">
+                    Antes da publicação, a ONG deve configurar sua razão social, CNPJ e um canal oficial para privacidade. Este site não inventa esses dados.
+                </div>
                 <section id="quem-somos" class="policy-section">
                     <h2>Quem somos</h2>
-                    <p>A @razaoSocial (CNPJ @cnpj) é a controladora dos dados pessoais tratados neste site, ou seja, quem decide como eles são usados. Atuamos com arrecadação e distribuição de alimentos em Osasco e região.</p>
+                    <p>O sistema é utilizado pela @razaoSocial para organizar solicitações de apoio, estoque, equipe e registros financeiros. A identificação jurídica da entidade responsável deve ser confirmada pela própria ONG antes da publicação.</p>
                 </section>
 
                 <section id="dados" class="policy-section">
@@ -77,10 +80,10 @@
                         <table class="policy-table">
                             <thead><tr><th scope="col">Quem é você</th><th scope="col">Dados</th></tr></thead>
                             <tbody>
-                                <tr><td>Família que pede ajuda</td><td>Nome, CPF, contato, endereço, composição da família e informações de renda ou vulnerabilidade, usadas para organizar a fila da cesta básica.</td></tr>
-                                <tr><td>Doador</td><td>Nome, contato e valor doado. Os dados do pagamento são tratados pelo banco ou pelo meio de pagamento, não ficam conosco.</td></tr>
-                                <tr><td>Voluntário ou colaborador</td><td>Nome, contato, documentos de cadastro e disponibilidade.</td></tr>
-                                <tr><td>Visitante do site</td><td>Endereço IP, tipo de navegador e páginas acessadas, por meio de cookies.</td></tr>
+                                <tr><td>Família que solicita apoio</td><td>Nome, CPF, telefone, tamanho da família e e-mail opcional; também são registrados o status do pedido e o horário de retirada, quando definido.</td></tr>
+                                <tr><td>Equipe e voluntários</td><td>Nome, telefone opcional, função, tipo de vínculo, perfil de acesso e escala. Senhas novas são armazenadas com hash.</td></tr>
+                                <tr><td>Registros financeiros internos</td><td>Descrição, tipo, valor, forma de pagamento, identificação opcional do pagador e situação de conciliação ou nota fiscal.</td></tr>
+                                <tr><td>Visitante do site</td><td>O sistema usa cookie de autenticação nas áreas restritas. Não há ferramenta de analytics configurada neste projeto.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -90,31 +93,33 @@
                 <section id="finalidades" class="policy-section">
                     <h2>Por que usamos seus dados</h2>
                     <ul>
-                        <li><strong>Entregar cestas básicas:</strong> cadastrar famílias, organizar a fila e avisar quando a cesta estiver liberada. Base legal: execução da atividade da ONG e consentimento.</li>
-                        <li><strong>Receber e prestar contas das doações:</strong> emitir recibos e publicar relatórios financeiros sem identificar doadores. Base legal: obrigação legal e legítimo interesse.</li>
-                        <li><strong>Organizar voluntários e equipe:</strong> escalas, contato e controle interno. Base legal: execução de contrato ou consentimento.</li>
-                        <li><strong>Manter o site seguro e funcionando:</strong> prevenir fraudes e medir o uso. Base legal: legítimo interesse.</li>
+                        <li>Receber e avaliar solicitações de apoio, organizar a fila e registrar retiradas.</li>
+                        <li>Controlar estoque, vencimentos e distribuição de alimentos.</li>
+                        <li>Administrar contas de acesso, equipe e escalas.</li>
+                        <li>Manter o livro-caixa interno e apoiar a prestação de contas.</li>
                     </ul>
+                    <p>A ONG deve definir e documentar a base legal adequada a cada finalidade antes de operar com dados reais.</p>
                 </section>
 
                 <section id="compartilhamento" class="policy-section">
                     <h2>Com quem compartilhamos</h2>
-                    <p>Compartilhamos dados somente quando necessário, com:</p>
+                    <p>O sistema não possui integração ativa com banco ou meio de pagamento. Quando configurados pela organização, os serviços de e-mail podem receber o endereço necessário ao envio de avisos, e o assistente de IA recebe somente totais operacionais, sem nomes ou CPFs.</p>
                     <ul>
-                        <li>fornecedores de tecnologia que hospedam o sistema e processam pagamentos, sob contrato de proteção de dados;</li>
-                        <li>órgãos públicos ou autoridades, quando a lei exigir ou houver ordem judicial;</li>
-                        <li>parceiros de assistência social, apenas com o seu consentimento.</li>
+                        <li>acessos por membros autorizados da equipe, conforme o perfil de acesso;</li>
+                        <li>fornecedores técnicos efetivamente configurados pela ONG;</li>
+                        <li>autoridades, quando houver obrigação legal válida.</li>
                     </ul>
                 </section>
 
                 <section id="prazo" class="policy-section">
                     <h2>Por quanto tempo guardamos</h2>
-                    <p>Guardamos os dados enquanto você participar das nossas atividades e, depois, pelo prazo exigido por lei (por exemplo, registros financeiros e fiscais). Passado esse prazo, apagamos ou anonimizamos as informações.</p>
+                    <p>Este projeto não executa descarte automático. Os registros permanecem no banco de dados até que um administrador os remova ou que a organização implemente uma política de retenção. A ONG deve definir prazos compatíveis com suas obrigações legais.</p>
                 </section>
 
                 <section id="direitos" class="policy-section">
                     <h2>Seus direitos</h2>
-                    <p>Você pode pedir, a qualquer momento e sem custo:</p>
+                    <p>Você pode solicitar confirmação de tratamento, acesso, correção, anonimização ou exclusão quando aplicável, além de informações sobre compartilhamento. O pedido deve ser encaminhado ao canal oficial de privacidade da ONG.</p>
+                    <p>Os direitos e prazos aplicáveis devem ser avaliados pelo responsável legal da organização.</p>
                     <ul>
                         <li>confirmação de que tratamos seus dados e acesso a eles;</li>
                         <li>correção de dados incompletos ou desatualizados;</li>
@@ -128,29 +133,35 @@
 
                 <section id="seguranca" class="policy-section">
                     <h2>Segurança</h2>
-                    <p>Limitamos o acesso aos dados a quem precisa deles para o trabalho, protegemos o sistema com login e conexão segura (HTTPS) e orientamos voluntários sobre sigilo. Nenhum sistema é totalmente imune a falhas. Se ocorrer um incidente que ofereça risco a você, avisaremos você e a ANPD.</p>
+                    <p>O sistema restringe áreas internas por perfil, protege novas senhas com hash e usa cookies de autenticação. A implantação deve fornecer HTTPS, manter o banco fora do controle de versão, proteger as credenciais do ambiente e definir procedimentos de resposta a incidentes.</p>
                 </section>
 
                 <section id="cookies" class="policy-section">
                     <h2>Cookies</h2>
-                    <p>Usamos cookies essenciais para o site funcionar (como o login da equipe) e, se ativados, cookies de estatística para entender quais páginas são mais úteis. Você pode bloquear cookies nas configurações do navegador, mas algumas áreas podem deixar de funcionar.</p>
+                    <p>O cookie de autenticação é usado para manter a sessão da equipe nas áreas restritas. Este projeto não configura cookies de publicidade ou analytics.</p>
                 </section>
 
                 <section id="menores" class="policy-section">
                     <h2>Crianças e adolescentes</h2>
-                    <p>Dados de menores de 18 anos, como os integrantes de uma família cadastrada, são tratados no melhor interesse deles e com o consentimento de pelo menos um dos pais ou responsáveis.</p>
+                    <p>O formulário solicita a quantidade de pessoas da família, não nomes ou documentos de crianças. O pedido deve ser enviado por uma pessoa adulta responsável.</p>
                 </section>
 
                 <section id="alteracoes" class="policy-section">
                     <h2>Mudanças nesta política</h2>
-                    <p>Se mudarmos como tratamos seus dados, atualizaremos esta página e a data no topo. Em mudanças importantes, avisaremos também por e-mail ou no site.</p>
+                    <p>Esta página deve ser atualizada quando mudarem os dados coletados, integrações ou responsáveis pelo tratamento.</p>
                 </section>
 
                 <section id="contato" class="policy-section">
                     <h2>Fale com a gente</h2>
-                    <p>Para exercer seus direitos ou tirar dúvidas, escreva para o nosso encarregado de proteção de dados. Respondemos em até 15 dias.</p>
-                    <a href="mailto:@emailPrivacidade" class="btn btn-grain">Enviar e-mail para @emailPrivacidade</a>
-                    <p class="mt-3 mb-0">Ou venha à nossa sede: Rua da Esperança, 123, Osasco, SP.</p>
+                    @if (!string.IsNullOrWhiteSpace(emailPrivacidade))
+                    {
+                        <p>Para exercer seus direitos ou tirar dúvidas, entre em contato com o canal informado pela ONG:</p>
+                        <a href="mailto:@emailPrivacidade" class="btn btn-grain">Enviar e-mail</a>
+                    }
+                    else
+                    {
+                        <p class="mb-0">O canal de privacidade ainda não foi configurado. A ONG deve informar um contato oficial antes de publicar esta página.</p>
+                    }
                 </section>
             </main>
         </div>

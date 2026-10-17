@@ -1,0 +1,182 @@
+@model IEnumerable<OngDoacao.Models.DistribuicaoDoacao>
+
+@{
+    ViewData["Title"] = "Histórico de doações";
+}
+
+<style>
+    @@media print {
+        .no-print, nav, footer { display: none !important; }
+        .table-responsive { overflow: visible !important; }
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <nav aria-label="Navegação">
+        <a asp-action="Dashboard">Voltar ao painel</a>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mt-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Histórico de doações</h1>
+            <p class="text-muted mb-0">Rastreie itens separados, retiradas e notificações por beneficiário.</p>
+        </div>
+        <button type="button" onclick="window.print()" class="btn btn-outline-dark no-print">Imprimir / salvar PDF</button>
+    </div>
+
+    @if (TempData["MensagemSucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close no-print" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Erro"]</div>
+    }
+
+    <div class="row g-3 mb-3 no-print">
+        <div class="col-md-7">
+            <label for="busca-doacao" class="form-label">Buscar beneficiário ou alimento</label>
+            <input id="busca-doacao" type="search" class="form-control" autocomplete="off">
+        </div>
+        <div class="col-md-5">
+            <label for="filtro-doacao" class="form-label">Situação</label>
+            <select id="filtro-doacao" class="form-select">
+                <option value="">Todas</option>
+                <option value="Reservada">Reservada</option>
+                <option value="Entregue">Entregue</option>
+                <option value="Cancelada">Cancelada</option>
+            </select>
+        </div>
+    </div>
+    <p id="contador-doacoes" class="small text-muted no-print" aria-live="polite"></p>
+
+    <div class="table-responsive border rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Reserva</th>
+                    <th scope="col">Beneficiário</th>
+                    <th scope="col">Telefone</th>
+                    <th scope="col">Produtos e quantidades</th>
+                    <th scope="col">Retirada prevista</th>
+                    <th scope="col">Entrega</th>
+                    <th scope="col">Notificação</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col" class="no-print">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-doacoes">
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-5">Nenhuma distribuição registrada ainda.</td></tr>
+                }
+                @foreach (var distribuicao in Model)
+                {
+                    var itens = string.Join(", ", distribuicao.Itens.Select(item => $"{item.Quantidade} × {item.NomeAlimento}"));
+                    var termoBusca = $"{distribuicao.Beneficiario.Nome} {itens}";
+                    <tr data-status="@distribuicao.Status" data-busca="@termoBusca @distribuicao.Beneficiario.Telefone">
+                        <td class="text-nowrap">@distribuicao.DataReserva.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="fw-semibold">@distribuicao.Beneficiario.Nome</td>
+                        <td>@if (!string.IsNullOrWhiteSpace(distribuicao.Beneficiario.Telefone)) { <a href="tel:@distribuicao.Beneficiario.Telefone">@distribuicao.Beneficiario.Telefone</a> } else { <span class="text-muted">Não informado</span> }</td>
+                        <td>
+                            <span>@itens</span>
+                            <small class="d-block text-muted">@distribuicao.Itens.Sum(item => item.Quantidade) itens</small>
+                        </td>
+                        <td class="text-nowrap">@distribuicao.HorarioRetirada.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-nowrap">@(distribuicao.DataEntrega?.ToString("dd/MM/yyyy HH:mm") ?? "Ainda não entregue")</td>
+                        <td>
+                            <span class="@(distribuicao.StatusNotificacao == "Enviada" ? "text-success" : "text-warning-emphasis")">@distribuicao.StatusNotificacao</span>
+                            @if (distribuicao.DataNotificacao.HasValue)
+                            {
+                                <small class="d-block text-muted">@distribuicao.DataNotificacao.Value.ToString("dd/MM HH:mm")</small>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(distribuicao.DetalheNotificacao))
+                            {
+                                <small class="d-block text-muted">@distribuicao.DetalheNotificacao</small>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @(distribuicao.Status == "Entregue" ? "bg-success" : distribuicao.Status == "Reservada" ? "bg-primary" : "bg-secondary")">@distribuicao.Status</span>
+                        </td>
+                        <td class="no-print">
+                            @if (distribuicao.Status == "Reservada")
+                            {
+                                <div class="d-flex flex-wrap gap-2">
+                                    <form asp-action="ReenviarNotificacao" method="post">
+                                        <input type="hidden" name="id" value="@distribuicao.Id">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Enviar e-mail</button>
+                                    </form>
+                                    @if (!string.IsNullOrWhiteSpace(distribuicao.Beneficiario.Telefone))
+                                    {
+                                        <form asp-action="RegistrarContatoManual" method="post" class="form-contato-manual">
+                                            <input type="hidden" name="id" value="@distribuicao.Id">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Registrar ligação</button>
+                                        </form>
+                                    }
+                                    <form asp-action="ConfirmarEntrega" method="post" class="form-confirmar-entrega">
+                                        <input type="hidden" name="id" value="@distribuicao.Id">
+                                        <button type="submit" class="btn btn-sm btn-success">Confirmar entrega</button>
+                                    </form>
+                                    <form asp-action="CancelarDistribuicao" method="post" class="form-cancelar-distribuicao">
+                                        <input type="hidden" name="id" value="@distribuicao.Id">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar e devolver</button>
+                                    </form>
+                                </div>
+                            }
+                        </td>
+                    </tr>
+                }
+                <tr id="sem-resultado-doacoes" hidden>
+                    <td colspan="9" class="text-center text-muted py-4">Nenhuma doação corresponde aos filtros.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const linhas = Array.from(document.querySelectorAll('#tabela-doacoes tr[data-status]'));
+            const busca = document.getElementById('busca-doacao');
+            const filtro = document.getElementById('filtro-doacao');
+            const contador = document.getElementById('contador-doacoes');
+            const vazio = document.getElementById('sem-resultado-doacoes');
+
+            function filtrar() {
+                const termo = busca.value.trim().toLocaleLowerCase('pt-BR');
+                let visiveis = 0;
+                linhas.forEach(function (linha) {
+                    const corresponde = (!filtro.value || linha.dataset.status === filtro.value) &&
+                        linha.dataset.busca.toLocaleLowerCase('pt-BR').includes(termo);
+                    linha.hidden = !corresponde;
+                    if (corresponde) visiveis++;
+                });
+                vazio.hidden = visiveis !== 0 || linhas.length === 0;
+                contador.textContent = linhas.length ? 'Exibindo ' + visiveis + ' de ' + linhas.length + ' distribuições' : '';
+            }
+
+            busca.addEventListener('input', filtrar);
+            filtro.addEventListener('change', filtrar);
+            document.querySelectorAll('.form-cancelar-distribuicao').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!confirm('Cancelar a reserva e devolver os itens ao estoque?')) event.preventDefault();
+                });
+            });
+            document.querySelectorAll('.form-confirmar-entrega').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!confirm('Registrar que os alimentos foram entregues ao beneficiário?')) event.preventDefault();
+                });
+            });
+            document.querySelectorAll('.form-contato-manual').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!confirm('Você confirmou o contato telefônico com o beneficiário?')) event.preventDefault();
+                });
+            });
+            filtrar();
+        })();
+    </script>
+}

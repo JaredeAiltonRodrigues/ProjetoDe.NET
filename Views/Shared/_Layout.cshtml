@@ -17,17 +17,20 @@
                     ALIMENTO <span class="fs-6 d-block" style="font-family:'Inter',sans-serif; font-weight:300; letter-spacing: 4px; color: #a0a0a0;">PARA TODOS</span>
                 </a>
                 
-                <button class="navbar-toggler rounded-0 border-0" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                <button class="navbar-toggler rounded-0 border-0" type="button" data-bs-toggle="collapse" data-bs-target="#menu-principal" aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between align-items-center mt-3 mt-sm-0">
+                <div id="menu-principal" class="navbar-collapse collapse d-sm-inline-flex justify-content-between align-items-center mt-3 mt-sm-0">
                     <ul class="navbar-nav flex-grow-1 ms-sm-5 gap-3">
                         <li class="nav-item"><a class="nav-link text-white text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;" href="/">Início</a></li>
                         
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User.Identity?.IsAuthenticated == true)
                         {
-                            <li class="nav-item"><a class="nav-link text-white text-uppercase fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;" href="/Admin/Dashboard">Dashboard</a></li>
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item"><a class="nav-link text-white text-uppercase fw-bold" style="font-size: 0.8rem; letter-spacing: 1px;" asp-controller="Admin" asp-action="Dashboard">Painel</a></li>
+                            }
                             
                             @if (User.IsInRole("Admin") || User.IsInRole("Estoque"))
                             {
@@ -43,18 +46,22 @@
                             {
                                 <li class="nav-item"><a class="nav-link text-white text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;" href="/Beneficiarios">Fila</a></li>
                                 <li class="nav-item"><a class="nav-link text-white text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;" href="/Equipe">Equipa</a></li>
+                                <li class="nav-item"><a class="nav-link text-white text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;" asp-controller="Escala" asp-action="Index">Escala</a></li>
+                                <li class="nav-item"><a class="nav-link text-white text-uppercase" style="font-size: 0.8rem; letter-spacing: 1px;" asp-controller="Admin" asp-action="Doacoes">Doações</a></li>
                             }
                         }
                     </ul>
 
                     <ul class="navbar-nav align-items-center gap-3">
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item text-white" style="font-family: 'Inter', sans-serif; font-weight: 300; font-size: 0.8rem;">
                                 Olá, @User.Identity.Name
                             </li>
                             <li class="nav-item">
-                                <a class="btn btn-outline-light btn-sm" href="/Login/Sair">Sair</a>
+                                <form asp-controller="Login" asp-action="Sair" method="post">
+                                    <button type="submit" class="btn btn-outline-light btn-sm">Sair</button>
+                                </form>
                             </li>
                         }
                         else

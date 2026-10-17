@@ -1,3 +1,5 @@
 bin/
 obj/
 banco_ong.db
+banco_ong.db-shm
+banco_ong.db-wal

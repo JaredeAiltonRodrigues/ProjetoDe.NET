@@ -1,18 +1,22 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using OngDoacao.Data;
+using OngDoacao.Models;
 
 namespace OngDoacao.Controllers
 {
     public class LoginController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IPasswordHasher<MembroEquipe> _passwordHasher;
 
-        public LoginController(AppDbContext context)
+        public LoginController(AppDbContext context, IPasswordHasher<MembroEquipe> passwordHasher)
         {
             _context = context;
+            _passwordHasher = passwordHasher;
         }
 
         [HttpGet]
@@ -22,21 +26,20 @@ namespace OngDoacao.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Entrar(string nome, string senha)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Entrar(string? nome, string? senha)
         {
-            // Busca o usuário no banco de dados
-            var usuario = _context.Equipe.FirstOrDefault(u => u.Nome == nome && u.Senha == senha && u.Ativo);
-
-            if (usuario == null)
+            if (string.IsNullOrWhiteSpace(nome) || string.IsNullOrWhiteSpace(senha))
             {
-                // Se for a primeira vez rodando e não tiver usuário, cria um Admin Master provisório para você não ficar trancado fora do sistema
-                if (nome == "admin" && senha == "admin123") {
-                    usuario = new Models.MembroEquipe { Nome = "Administrador", PerfilAcesso = "Admin" };
-                }
-                else {
-                    TempData["Erro"] = "Nome ou senha incorretos!";
-                    return RedirectToAction("Index");
-                }
+                TempData["Erro"] = "Informe o usuário e a senha.";
+                return RedirectToAction("Index");
+            }
+
+            var usuario = _context.Equipe.FirstOrDefault(u => u.Nome == nome && u.Ativo);
+            if (usuario == null || !VerificarSenha(usuario, senha))
+            {
+                TempData["Erro"] = "Nome ou senha incorretos.";
+                return RedirectToAction("Index");
             }
 
             // Cria a "Identidade" da pessoa logada (Crachá virtual)
@@ -56,6 +59,8 @@ namespace OngDoacao.Controllers
             return RedirectToAction("Dashboard", "Admin");
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Sair()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -65,6 +70,36 @@ namespace OngDoacao.Controllers
         public IActionResult AcessoNegado()
         {
             return View();
+        }
+
+        private bool VerificarSenha(MembroEquipe usuario, string senha)
+        {
+            var senhaArmazenada = usuario.Senha;
+            if (string.IsNullOrEmpty(senhaArmazenada))
+            {
+                return false;
+            }
+
+            if (!senhaArmazenada.StartsWith("AQAAAA", StringComparison.Ordinal))
+            {
+                if (!string.Equals(senhaArmazenada, senha, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                usuario.Senha = _passwordHasher.HashPassword(usuario, senha);
+                _context.SaveChanges();
+                return true;
+            }
+
+            var resultado = _passwordHasher.VerifyHashedPassword(usuario, senhaArmazenada, senha);
+            if (resultado == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                usuario.Senha = _passwordHasher.HashPassword(usuario, senha);
+                _context.SaveChanges();
+            }
+
+            return resultado != PasswordVerificationResult.Failed;
         }
     }
 }

@@ -1,90 +1,150 @@
 @model IEnumerable<OngDoacao.Models.Beneficiario>
 
 @{
-    ViewData["Title"] = "Gestão de Beneficiários";
+    ViewData["Title"] = "Fila de beneficiários";
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>🧑‍🤝‍🧑 Gestão da Fila de Doações</h2>
+<style>
+    @@media print {
+        .no-print { display: none !important; }
+        .table-responsive { overflow: visible !important; }
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Fila de beneficiários</h1>
+            <p class="text-muted mb-0">Acompanhe solicitações e entregas de cestas.</p>
+        </div>
+        <button type="button" onclick="window.print()" class="btn btn-outline-dark no-print">Imprimir lista</button>
     </div>
 
     @if (TempData["MensagemSucesso"] != null)
     {
-        <div class="alert alert-success fw-bold shadow-sm">@TempData["MensagemSucesso"]</div>
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close no-print" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Erro"]</div>
     }
 
-    <!-- Tabela da Fila -->
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Pessoas Registadas no Sistema</h5>
+    <div class="row g-3 align-items-end mb-3 no-print">
+        <div class="col-md-7">
+            <label for="busca-beneficiario" class="form-label">Buscar por nome ou telefone</label>
+            <input id="busca-beneficiario" type="search" class="form-control" autocomplete="off">
         </div>
-        <div class="card-body p-0">
-            <table class="table table-hover table-striped mb-0 align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Nome</th>
-                        <th>Agregado Familiar</th>
-                        <th>Contacto</th>
-                        <th>Data Registo</th>
-                        <th>Status</th>
-                        <th class="text-center">Ações Rápidas</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (!Model.Any())
-                    {
-                        <tr>
-                            <td colspan="6" class="text-center text-muted p-4">Não há beneficiários registados neste momento.</td>
-                        </tr>
-                    }
-                    
-                    @foreach (var b in Model)
-                    {
-                        <tr>
-                            <td class="fw-bold">@b.Nome</td>
-                            <td>@b.TamanhoFamilia pessoas</td>
-                            <td>@b.Telefone</td>
-                            <td>@b.DataCadastro.ToString("dd/MM/yyyy HH:mm")</td>
-                            <td>
-                                @if(b.StatusFila == "Aguardando") {
-                                    <span class="badge bg-warning text-dark">Aguardando</span>
-                                } else if (b.StatusFila == "Cesta Reservada") {
-                                    <span class="badge bg-primary">Reservada (@b.HorarioRetirada?.ToString("dd/MM HH:mm"))</span>
-                                } else {
-                                    <span class="badge bg-success">Entregue</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="d-flex justify-content-center gap-2">
-                                    <!-- Botão para confirmar que a pessoa levantou a cesta -->
-                                    @if(b.StatusFila == "Cesta Reservada") {
-                                        <form asp-action="AtualizarStatus" method="post">
-                                            <input type="hidden" name="id" value="@b.Id" />
-                                            <input type="hidden" name="novoStatus" value="Cesta Entregue" />
-                                            <button type="submit" class="btn btn-sm btn-success fw-bold" title="Confirmar Entrega">
-                                                ✔️ Entregue
-                                            </button>
-                                        </form>
-                                    }
-                                    
-                                    <!-- Botão para remover ou cancelar o registo -->
-                                    <form asp-action="Remover" method="post" onsubmit="return confirm('Tem a certeza que deseja eliminar o registo desta família?');">
-                                        <input type="hidden" name="id" value="@b.Id" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Apagar Registo">
-                                            🗑️ Remover
-                                        </button>
-                                    </form>
-
-                                    <button onclick="window.print()" class="btn btn-outline-dark fw-bold shadow-sm">
-                                        🖨️ Exportar para PDF
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+        <div class="col-md-5">
+            <label for="filtro-status" class="form-label">Situação</label>
+            <select id="filtro-status" class="form-select">
+                <option value="">Todas</option>
+                <option value="Aguardando">Aguardando</option>
+                <option value="Cesta Reservada">Cesta reservada</option>
+                <option value="Cesta Entregue">Entregue</option>
+            </select>
         </div>
     </div>
+    <p id="contador-beneficiarios" class="small text-muted no-print" aria-live="polite"></p>
+
+    <div class="table-responsive border rounded">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th scope="col">Nome</th>
+                    <th scope="col">Família</th>
+                    <th scope="col">Contato</th>
+                    <th scope="col">Cadastro</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col">Retirada</th>
+                    <th scope="col" class="no-print">Ações</th>
+                </tr>
+            </thead>
+            <tbody id="lista-beneficiarios">
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted py-5">Nenhuma solicitação cadastrada.</td></tr>
+                }
+                @foreach (var beneficiario in Model)
+                {
+                    <tr data-nome="@beneficiario.Nome" data-telefone="@beneficiario.Telefone" data-status="@beneficiario.StatusFila">
+                        <td class="fw-semibold">@beneficiario.Nome</td>
+                        <td>@beneficiario.TamanhoFamilia @(beneficiario.TamanhoFamilia == 1 ? "pessoa" : "pessoas")</td>
+                        <td>@beneficiario.Telefone</td>
+                        <td class="text-nowrap">@beneficiario.DataCadastro.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (beneficiario.StatusFila == "Aguardando")
+                            {
+                                <span class="badge bg-warning text-dark">Aguardando</span>
+                            }
+                            else if (beneficiario.StatusFila == "Cesta Reservada")
+                            {
+                                <span class="badge bg-primary">Reservada</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Entregue</span>
+                            }
+                        </td>
+                        <td class="text-nowrap">@(beneficiario.HorarioRetirada?.ToString("dd/MM/yyyy HH:mm") ?? "Não definida")</td>
+                        <td class="no-print">
+                            <div class="d-flex flex-wrap gap-2">
+                                @if (beneficiario.StatusFila == "Cesta Reservada")
+                                {
+                                    <form asp-action="AtualizarStatus" method="post" class="form-entrega">
+                                        <input type="hidden" name="id" value="@beneficiario.Id">
+                                        <input type="hidden" name="novoStatus" value="Cesta Entregue">
+                                        <button type="submit" class="btn btn-sm btn-success">Confirmar entrega</button>
+                                    </form>
+                                }
+                                <form asp-action="Remover" method="post" class="form-remover">
+                                    <input type="hidden" name="id" value="@beneficiario.Id">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remover</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                <tr id="sem-resultado-beneficiarios" hidden>
+                    <td colspan="7" class="text-center text-muted py-4">Nenhum resultado para os filtros selecionados.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const linhas = Array.from(document.querySelectorAll('#lista-beneficiarios tr[data-status]'));
+            const busca = document.getElementById('busca-beneficiario');
+            const filtro = document.getElementById('filtro-status');
+            const contador = document.getElementById('contador-beneficiarios');
+            const vazio = document.getElementById('sem-resultado-beneficiarios');
+
+            function filtrar() {
+                const termo = busca.value.trim().toLocaleLowerCase('pt-BR');
+                let visiveis = 0;
+                linhas.forEach(function (linha) {
+                    const texto = (linha.dataset.nome + ' ' + linha.dataset.telefone).toLocaleLowerCase('pt-BR');
+                    const corresponde = (!filtro.value || linha.dataset.status === filtro.value) && texto.includes(termo);
+                    linha.hidden = !corresponde;
+                    if (corresponde) visiveis++;
+                });
+                vazio.hidden = visiveis !== 0 || linhas.length === 0;
+                contador.textContent = linhas.length ? 'Exibindo ' + visiveis + ' de ' + linhas.length + ' solicitações' : '';
+            }
+
+            busca.addEventListener('input', filtrar);
+            filtro.addEventListener('change', filtrar);
+            document.querySelectorAll('.form-remover').forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!confirm('Remover este cadastro da fila?')) event.preventDefault();
+                });
+            });
+            filtrar();
+        })();
+    </script>
+}

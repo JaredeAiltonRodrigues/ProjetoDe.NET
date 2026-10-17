@@ -30,6 +30,8 @@
     .btn-forest:hover:not(:disabled) { background: #17402f; color: #fff; }
     .btn-forest:disabled { background: #9aa8a0; color: #fff; }
     .atalhos .btn { border-radius: 4px; font-weight: 600; }
+    .status-pendente { color: #8a5700; }
+    .acoes-distribuicao form { display: inline-block; }
     :focus-visible { outline: 3px solid var(--grain); outline-offset: 2px; }
 </style>
 
@@ -40,6 +42,9 @@
             <a asp-controller="Alimentos" asp-action="Index" class="btn btn-outline-dark">Estoque</a>
             <a asp-controller="Financeiro" asp-action="Index" class="btn btn-outline-dark">Financeiro</a>
             <a asp-controller="Equipe" asp-action="Index" class="btn btn-outline-dark">Equipe (RH)</a>
+            <a asp-controller="Beneficiarios" asp-action="Index" class="btn btn-outline-dark">Beneficiários</a>
+            <a asp-controller="Escala" asp-action="Index" class="btn btn-outline-dark">Escala</a>
+            <a asp-action="Doacoes" class="btn btn-forest">Histórico de doações</a>
         </nav>
     </div>
 
@@ -60,28 +65,57 @@
 
     <!-- Resumo -->
     <div class="row g-3 mb-4">
-        <div class="col-md-4">
+        <div class="col-6 col-xl-2">
             <section class="resumo" aria-label="Estoque atual">
                 <div>Itens válidos no estoque</div>
                 <div class="valor">@Model.TotalItensEstoque</div>
                 <small class="text-muted">Itens dentro da validade</small>
             </section>
         </div>
-        <div class="col-md-4">
+        <div class="col-6 col-xl-2">
             <section class="resumo destaque" aria-label="Cestas possíveis">
                 <div>Cestas possíveis</div>
                 <div class="valor">@Model.CestasDisponiveis</div>
                 <small>Regra: 5 itens formam 1 cesta</small>
             </section>
         </div>
-        <div class="col-md-4">
+        <div class="col-6 col-xl-2">
             <section class="resumo" aria-label="Fila de espera">
                 <div>Famílias aguardando</div>
                 <div class="valor">@aguardando</div>
                 <small class="text-muted">Na fila de beneficiários</small>
             </section>
         </div>
+        <div class="col-6 col-xl-2">
+            <section class="resumo" aria-label="Itens próximos do vencimento">
+                <div>Vencem em 7 dias</div>
+                <div class="valor">@Model.ItensVencendoEmSeteDias</div>
+                <small class="text-muted">Priorize estes lotes</small>
+            </section>
+        </div>
+        <div class="col-6 col-xl-2">
+            <section class="resumo" aria-label="Reservas em aberto">
+                <div>Reservas ativas</div>
+                <div class="valor">@Model.ReservasAtivas</div>
+                <small class="text-muted">Aguardando retirada</small>
+            </section>
+        </div>
+        <div class="col-6 col-xl-2">
+            <section class="resumo @(Model.NotificacoesPendentes > 0 ? "destaque" : "")" aria-label="Notificações pendentes">
+                <div>Notificações pendentes</div>
+                <div class="valor">@Model.NotificacoesPendentes</div>
+                <small>Requerem e-mail ou reenvio</small>
+            </section>
+        </div>
     </div>
+
+    @if (Model.ProximosVencimentos.Count > 0)
+    {
+        <section class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4" aria-label="Alerta de validade">
+            <span><strong>Atenção ao vencimento:</strong> @Model.ItensVencendoEmSeteDias itens vencem nos próximos sete dias.</span>
+            <a asp-controller="Alimentos" asp-action="Index" class="alert-link">Abrir estoque</a>
+        </section>
+    }
 
     <!-- Distribuição -->
     <section class="mb-4" aria-labelledby="titulo-distribuicao">
@@ -124,11 +158,11 @@
             </div>
             <div class="col-lg-5">
                 <div class="bloco d-flex flex-column">
-                    <h2 class="mb-3">Confirmar entrega</h2>
-                    <p>A lista segue a ordem de cadastro. As cestas só são distribuídas depois que você confirmar.</p>
+                                        <h2 class="mb-3">Confirmar reservas</h2>
+                                        <p>Separa cinco unidades por família, reserva um horário e cria o histórico. A entrega só é registrada quando o recebimento for confirmado.</p>
                     <form asp-action="LiberarCestas" method="post" id="form-liberar" class="mt-auto"
-                          data-confirm="Liberar @previstos.Count @(previstos.Count == 1 ? "cesta" : "cestas") para os beneficiários listados? Essa ação não pode ser desfeita.">
-                        <button type="submit" class="btn btn-forest w-100" disabled="@(!podeLiberar)">Confirmar distribuição manual</button>
+                                                    data-confirm="Reservar e separar @previstos.Count @(previstos.Count == 1 ? "cesta" : "cestas") para os beneficiários listados?">
+                                                <button type="submit" class="btn btn-forest w-100" disabled="@(!podeLiberar)">Reservar e separar alimentos</button>
                         @if (!podeLiberar)
                         {
                             <div class="form-text mt-2">Disponível quando houver cestas e famílias aguardando.</div>
@@ -136,6 +170,78 @@
                     </form>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="mb-4" aria-labelledby="titulo-doacoes-recentes">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div>
+                <h2 id="titulo-doacoes-recentes" class="mb-1">Doações recentes</h2>
+                <p class="text-muted mb-0">Produtos separados, retirada e situação da notificação.</p>
+            </div>
+            <a asp-action="Doacoes" class="btn btn-outline-dark">Ver histórico completo</a>
+        </div>
+        <div class="table-responsive border rounded">
+            <table class="table table-hover align-middle mb-0 tabela">
+                <thead>
+                    <tr>
+                        <th scope="col">Beneficiário</th>
+                        <th scope="col">Contato</th>
+                        <th scope="col">Itens separados</th>
+                        <th scope="col">Retirada</th>
+                        <th scope="col">Entrega</th>
+                        <th scope="col">Notificação</th>
+                        <th scope="col" class="no-print">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.DistribuicoesRecentes.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">Ainda não há doações registradas. A reserva de cestas cria o histórico automaticamente.</td></tr>
+                    }
+                    @foreach (var distribuicao in Model.DistribuicoesRecentes)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@distribuicao.Beneficiario.Nome</td>
+                            <td>@(distribuicao.Beneficiario.Telefone ?? "Sem telefone")</td>
+                            <td><span class="small">@string.Join(", ", distribuicao.Itens.Select(item => $"{item.Quantidade} × {item.NomeAlimento}"))</span></td>
+                            <td class="text-nowrap">@distribuicao.HorarioRetirada.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td><span class="badge @(distribuicao.Status == "Entregue" ? "bg-success" : distribuicao.Status == "Reservada" ? "bg-primary" : "bg-secondary")">@distribuicao.Status</span></td>
+                            <td>
+                                <span class="@(distribuicao.StatusNotificacao == "Enviada" ? "text-success" : "status-pendente")">@distribuicao.StatusNotificacao</span>
+                                @if (!string.IsNullOrWhiteSpace(distribuicao.DetalheNotificacao))
+                                {
+                                    <small class="d-block text-muted">@distribuicao.DetalheNotificacao</small>
+                                }
+                            </td>
+                            <td class="no-print acoes-distribuicao">
+                                @if (distribuicao.Status == "Reservada")
+                                {
+                                    <form asp-action="ReenviarNotificacao" method="post">
+                                        <input type="hidden" name="id" value="@distribuicao.Id">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">Enviar e-mail</button>
+                                    </form>
+                                    @if (!string.IsNullOrWhiteSpace(distribuicao.Beneficiario.Telefone))
+                                    {
+                                        <form asp-action="RegistrarContatoManual" method="post" class="form-contato-manual">
+                                            <input type="hidden" name="id" value="@distribuicao.Id">
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">Registrar ligação</button>
+                                        </form>
+                                    }
+                                    <form asp-action="ConfirmarEntrega" method="post" class="form-confirmar-entrega">
+                                        <input type="hidden" name="id" value="@distribuicao.Id">
+                                        <button type="submit" class="btn btn-sm btn-success">Confirmar entrega</button>
+                                    </form>
+                                    <form asp-action="CancelarDistribuicao" method="post" class="form-cancelar-distribuicao">
+                                        <input type="hidden" name="id" value="@distribuicao.Id">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar e devolver</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </section>
 
@@ -187,6 +293,22 @@
 
 @section Scripts {
     <script>
+        document.querySelectorAll('.form-cancelar-distribuicao').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!confirm('Cancelar a reserva e devolver os itens ao estoque?')) event.preventDefault();
+            });
+        });
+        document.querySelectorAll('.form-contato-manual').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!confirm('Você confirmou o contato telefônico com o beneficiário?')) event.preventDefault();
+            });
+        });
+        document.querySelectorAll('.form-confirmar-entrega').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!confirm('Confirmar que a pessoa recebeu os alimentos separados?')) event.preventDefault();
+            });
+        });
+
         // Confirmação antes de liberar as cestas e proteção contra clique duplo.
         document.getElementById('form-liberar').addEventListener('submit', function (e) {
             if (!confirm(this.dataset.confirm)) {

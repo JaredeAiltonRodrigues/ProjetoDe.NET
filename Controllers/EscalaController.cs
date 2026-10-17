@@ -32,8 +32,28 @@ namespace OngDoacao.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Agendar(EscalaVoluntario escala)
         {
+            if (!ModelState.IsValid || escala.DataTurno <= DateTime.Now)
+            {
+                TempData["Erro"] = "Informe um turno válido para uma data futura.";
+                return RedirectToAction("Index");
+            }
+
+            var membroAtivo = _context.Equipe.Any(m => m.Id == escala.MembroEquipeId && m.Ativo);
+            var setorPermitido = new[] { "Triagem de Alimentos", "Entrega de Cestas", "Administrativo" }
+                .Contains(escala.Setor);
+            var conflito = _context.Escalas.Any(e => e.MembroEquipeId == escala.MembroEquipeId && e.DataTurno == escala.DataTurno);
+
+            if (!membroAtivo || !setorPermitido || conflito)
+            {
+                TempData["Erro"] = conflito
+                    ? "Este membro já possui um turno nesse horário."
+                    : "Selecione um membro ativo e um setor válido.";
+                return RedirectToAction("Index");
+            }
+
             _context.Escalas.Add(escala);
             _context.SaveChanges();
             TempData["MensagemSucesso"] = "Turno agendado com sucesso!";
@@ -41,6 +61,7 @@ namespace OngDoacao.Controllers
         }
 
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult Remover(int id)
         {
             var escala = _context.Escalas.Find(id);

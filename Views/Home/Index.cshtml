@@ -49,6 +49,16 @@
 </style>
 
 <!-- BOAS-VINDAS -->
+@if (TempData["MensagemSucesso"] != null)
+{
+    <div class="container pt-3">
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    </div>
+}
+
 <header class="hero">
     <div class="container">
         <div class="row align-items-center g-5">

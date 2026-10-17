@@ -2,31 +2,47 @@
 
 @{
     ViewData["Title"] = "Escala de Voluntários";
+    var inicio = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>📅 Calendário de Turnos (Escala)</h2>
-        <button onclick="window.print()" class="btn btn-outline-dark fw-bold">🖨️ Exportar Escala (PDF)</button>
+<style>
+    @@media print {
+        .no-print, nav, footer { display: none !important; }
+        .table-responsive { overflow: visible !important; }
+    }
+</style>
+
+<div class="container mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h2 mb-1">Escala de voluntários</h1>
+            <p class="text-muted mb-0">Agendamentos futuros por pessoa e setor.</p>
+        </div>
+        <button type="button" onclick="window.print()" class="btn btn-outline-dark no-print">Imprimir / salvar PDF</button>
     </div>
 
     @if (TempData["MensagemSucesso"] != null)
     {
-        <div class="alert alert-success shadow-sm">@TempData["MensagemSucesso"]</div>
+        <div class="alert alert-success" role="status">@TempData["MensagemSucesso"]</div>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger" role="alert">@TempData["Erro"]</div>
     }
 
     <div class="row">
         <!-- Formulário para agendar -->
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-dark text-white">
-                    <h5 class="mb-0">Agendar Voluntário</h5>
-                </div>
-                <div class="card-body bg-creme">
+        <div class="col-lg-4 mb-4">
+            <section class="border rounded p-4 h-100">
+                    <h2 class="h5 mb-3">Agendar turno</h2>
+                    @if (ViewBag.Equipe.Count == 0)
+                    {
+                        <div class="alert alert-info" role="status">Cadastre ou ative um membro da equipe para criar um turno.</div>
+                    }
                     <form asp-action="Agendar" method="post">
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Voluntário/Funcionário</label>
-                            <select name="MembroEquipeId" class="form-select" required>
+                            <label for="MembroEquipeId" class="form-label">Pessoa</label>
+                            <select id="MembroEquipeId" name="MembroEquipeId" class="form-select" required disabled="@(ViewBag.Equipe.Count == 0)">
                                 <option value="">Selecione...</option>
                                 @foreach (var membro in ViewBag.Equipe)
                                 {
@@ -35,55 +51,66 @@
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Data e Hora</label>
-                            <input type="datetime-local" name="DataTurno" class="form-control" required />
+                            <label for="DataTurno" class="form-label">Data e hora</label>
+                            <input id="DataTurno" type="datetime-local" name="DataTurno" min="@inicio" class="form-control" required />
                         </div>
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Setor de Atuação</label>
-                            <select name="Setor" class="form-select" required>
+                            <label for="Setor" class="form-label">Setor</label>
+                            <select id="Setor" name="Setor" class="form-select" required>
                                 <option value="Triagem de Alimentos">Triagem de Alimentos</option>
                                 <option value="Entrega de Cestas">Entrega de Cestas</option>
                                 <option value="Administrativo">Administrativo</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100 fw-bold">Gravar na Escala</button>
+                        <button type="submit" class="btn btn-primary w-100" disabled="@(ViewBag.Equipe.Count == 0)">Salvar turno</button>
                     </form>
-                </div>
-            </div>
+            </section>
         </div>
 
         <!-- Tabela da Escala -->
-        <div class="col-md-8">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <table class="table table-striped table-hover mb-0">
+        <div class="col-lg-8">
+                    <div class="table-responsive border rounded">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Data / Hora</th>
-                                <th>Voluntário</th>
-                                <th>Setor</th>
-                                <th>Ação</th>
+                                <th scope="col">Data / hora</th>
+                                <th scope="col">Pessoa</th>
+                                <th scope="col">Setor</th>
+                                <th scope="col" class="no-print">Ação</th>
                             </tr>
                         </thead>
                         <tbody>
+                            @if (!Model.Any())
+                            {
+                                <tr><td colspan="4" class="text-center text-muted py-5">Nenhum turno futuro agendado.</td></tr>
+                            }
                             @foreach (var turno in Model)
                             {
                                 <tr>
                                     <td class="fw-bold">@turno.DataTurno.ToString("dd/MM/yyyy - HH:mm")</td>
                                     <td>@turno.Membro?.Nome</td>
                                     <td><span class="badge bg-primary">@turno.Setor</span></td>
-                                    <td>
-                                        <form asp-action="Remover" method="post">
+                                    <td class="no-print">
+                                        <form asp-action="Remover" method="post" class="form-cancelar">
                                             <input type="hidden" name="id" value="@turno.Id" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar turno</button>
                                         </form>
                                     </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
-                </div>
-            </div>
+                    </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.form-cancelar').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!confirm('Cancelar este turno?')) event.preventDefault();
+            });
+        });
+    </script>
+}

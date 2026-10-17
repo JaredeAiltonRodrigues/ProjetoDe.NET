@@ -27,11 +27,16 @@ namespace OngDoacao.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            var agora = DateTime.Now;
+            var hoje = DateTime.Today;
             var alimentos = await _context.Alimentos
-                .Where(a => a.DataVencimento > agora && a.Quantidade > 0)
+                .Where(a => a.DataVencimento >= hoje && a.Quantidade > 0)
                 .ToListAsync();
             var totalItens = alimentos.Sum(a => a.Quantidade);
+            var proximosVencimentos = await _context.Alimentos
+                .Where(a => a.Quantidade > 0 && a.DataVencimento >= hoje && a.DataVencimento <= hoje.AddDays(7))
+                .OrderBy(a => a.DataVencimento)
+                .Take(8)
+                .ToListAsync();
             var fila = await _context.Beneficiarios
                 .OrderBy(b => b.DataCadastro)
                 .ThenBy(b => b.Id)
@@ -43,21 +48,48 @@ namespace OngDoacao.Controllers
                 .Take(cestasDisponiveis)
                 .ToList();
 
-            // Comente a chamada da IA para não travar a tela
-            // var conselho = await _iaService.ObterConselhoDoGestorAsync(totalItens, cestasDisponiveis, aguardando);
-    
-                // Coloque um texto fixo temporário
-             var conselho = "A integração com a IA está temporariamente desligada para testes.";
+            var conselho = await _iaService.ObterConselhoDoGestorAsync(
+                totalItens, cestasDisponiveis, aguardando, beneficiariosPrevistos.Count);
+            var assistenteDisponivel = !conselho.StartsWith("Assistente indisponível", StringComparison.OrdinalIgnoreCase);
+            var distribuicoesRecentes = await _context.Distribuicoes
+                .Include(distribuicao => distribuicao.Beneficiario)
+                .Include(distribuicao => distribuicao.Itens)
+                .OrderByDescending(distribuicao => distribuicao.DataReserva)
+                .Take(12)
+                .ToListAsync();
 
-             var model = new DashboardViewModel
-                {
-                    TotalItensEstoque = totalItens,
-                    CestasDisponiveis = cestasDisponiveis,
-                    Fila = fila,
-                    SugestaoIA = conselho 
-                 };
+            var model = new DashboardViewModel
+            {
+                TotalItensEstoque = totalItens,
+                CestasDisponiveis = cestasDisponiveis,
+                ItensVencendoEmSeteDias = proximosVencimentos.Sum(alimento => alimento.Quantidade),
+                ReservasAtivas = await _context.Distribuicoes.CountAsync(distribuicao => distribuicao.Status == "Reservada"),
+                EntregasConcluidas = await _context.Distribuicoes.CountAsync(distribuicao => distribuicao.Status == "Entregue"),
+                NotificacoesPendentes = await _context.Distribuicoes.CountAsync(distribuicao =>
+                    distribuicao.Status == "Reservada" &&
+                    distribuicao.StatusNotificacao != "Enviada" &&
+                    distribuicao.StatusNotificacao != "Contato manual"),
+                Fila = fila,
+                BeneficiariosPrevistos = beneficiariosPrevistos,
+                DistribuicoesRecentes = distribuicoesRecentes,
+                ProximosVencimentos = proximosVencimentos,
+                SugestaoIA = conselho,
+                AssistenteDisponivel = assistenteDisponivel
+            };
 
             return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Doacoes()
+        {
+            var distribuicoes = await _context.Distribuicoes
+                .Include(distribuicao => distribuicao.Beneficiario)
+                .Include(distribuicao => distribuicao.Itens)
+                .OrderByDescending(distribuicao => distribuicao.DataReserva)
+                .ToListAsync();
+
+            return View(distribuicoes);
         }
 
         [HttpPost]
@@ -65,9 +97,9 @@ namespace OngDoacao.Controllers
         public async Task<IActionResult> LiberarCestas()
         {
             await using var transaction = await _context.Database.BeginTransactionAsync();
-            var agora = DateTime.Now;
+            var hoje = DateTime.Today;
             var alimentos = await _context.Alimentos
-                .Where(a => a.DataVencimento > agora && a.Quantidade > 0)
+                .Where(a => a.DataVencimento >= hoje && a.Quantidade > 0)
                 .OrderBy(a => a.DataVencimento)
                 .ThenBy(a => a.Id)
                 .ToListAsync();
@@ -87,43 +119,215 @@ namespace OngDoacao.Controllers
                 return RedirectToAction("Dashboard");
             }
 
+            var distribuicoes = new List<DistribuicaoDoacao>();
             DateTime horarioAgendamento = DateTime.Today.AddDays(1).AddHours(8);
-
             foreach (var pessoa in pessoasAtendidas)
             {
+                var distribuicao = new DistribuicaoDoacao
+                {
+                    BeneficiarioId = pessoa.Id,
+                    Beneficiario = pessoa,
+                    DataReserva = DateTime.Now,
+                    HorarioRetirada = horarioAgendamento,
+                    Status = "Reservada",
+                    StatusNotificacao = "Pendente"
+                };
+
+                var itensRestantes = 5;
+                foreach (var alimento in alimentos.Where(alimento => alimento.Quantidade > 0))
+                {
+                    var quantidadeSeparada = Math.Min(alimento.Quantidade, itensRestantes);
+                    if (quantidadeSeparada == 0)
+                    {
+                        continue;
+                    }
+
+                    distribuicao.Itens.Add(new DistribuicaoDoacaoItem
+                    {
+                        NomeAlimento = alimento.Nome ?? "Alimento sem nome",
+                        CodigoDeBarras = alimento.CodigoDeBarras,
+                        DataVencimento = alimento.DataVencimento,
+                        Quantidade = quantidadeSeparada
+                    });
+                    alimento.Quantidade -= quantidadeSeparada;
+                    itensRestantes -= quantidadeSeparada;
+
+                    if (itensRestantes == 0)
+                    {
+                        break;
+                    }
+                }
+
+                if (itensRestantes != 0)
+                {
+                    throw new InvalidOperationException("O estoque mudou durante a reserva. Nenhuma distribuição foi concluída.");
+                }
+
                 pessoa.StatusFila = "Cesta Reservada";
                 pessoa.HorarioRetirada = horarioAgendamento;
+                distribuicoes.Add(distribuicao);
                 horarioAgendamento = horarioAgendamento.AddMinutes(15);
             }
 
-            var itensARemover = pessoasAtendidas.Count * 5;
             foreach (var alimento in alimentos)
             {
-                var quantidadeUsada = Math.Min(alimento.Quantidade, itensARemover);
-                alimento.Quantidade -= quantidadeUsada;
-                itensARemover -= quantidadeUsada;
-
                 if (alimento.Quantidade == 0)
                 {
                     _context.Alimentos.Remove(alimento);
                 }
-
-                if (itensARemover == 0)
-                {
-                    break;
-                }
             }
 
+            _context.Distribuicoes.AddRange(distribuicoes);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
 
-            foreach (var pessoa in pessoasAtendidas)
+            foreach (var distribuicao in distribuicoes)
             {
-                await _notificacaoService.AvisarBeneficiarioAsync(pessoa);
+                var resultado = await _notificacaoService.AvisarBeneficiarioAsync(distribuicao.Beneficiario);
+                distribuicao.StatusNotificacao = resultado.Status;
+                distribuicao.DetalheNotificacao = resultado.Mensagem;
+                distribuicao.DataNotificacao = resultado.Status == "Enviada" ? DateTime.Now : null;
+            }
+            await _context.SaveChangesAsync();
+
+            var notificacoesEnviadas = distribuicoes.Count(distribuicao => distribuicao.StatusNotificacao == "Enviada");
+            TempData["MensagemSucesso"] = $"{distribuicoes.Count} cestas reservadas com os itens registrados. Notificações enviadas: {notificacoesEnviadas} de {distribuicoes.Count}.";
+            return RedirectToAction("Dashboard");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReenviarNotificacao(int id)
+        {
+            var distribuicao = await _context.Distribuicoes
+                .Include(item => item.Beneficiario)
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (distribuicao == null)
+            {
+                return NotFound();
             }
 
-            TempData["MensagemSucesso"] = $"{pessoasAtendidas.Count} cestas foram liberadas com sucesso e os beneficiários foram notificados!";
-            return RedirectToAction("Dashboard");
+            if (distribuicao.Status != "Reservada")
+            {
+                TempData["Erro"] = "Só é possível notificar uma cesta ainda reservada.";
+                return RedirectToAction("Doacoes");
+            }
+
+            var resultado = await _notificacaoService.AvisarBeneficiarioAsync(distribuicao.Beneficiario);
+            distribuicao.StatusNotificacao = resultado.Status;
+            distribuicao.DetalheNotificacao = resultado.Mensagem;
+            distribuicao.DataNotificacao = resultado.Status == "Enviada" ? DateTime.Now : null;
+            await _context.SaveChangesAsync();
+
+            TempData[resultado.Status == "Enviada" ? "MensagemSucesso" : "Erro"] = resultado.Mensagem;
+            return RedirectToAction("Doacoes");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegistrarContatoManual(int id)
+        {
+            var distribuicao = await _context.Distribuicoes
+                .Include(item => item.Beneficiario)
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (distribuicao == null)
+            {
+                return NotFound();
+            }
+
+            if (distribuicao.Status != "Reservada" || string.IsNullOrWhiteSpace(distribuicao.Beneficiario.Telefone))
+            {
+                TempData["Erro"] = "Não há telefone válido ou reserva ativa para registrar o contato.";
+                return RedirectToAction("Doacoes");
+            }
+
+            distribuicao.StatusNotificacao = "Contato manual";
+            distribuicao.DataNotificacao = DateTime.Now;
+            distribuicao.DetalheNotificacao = "A equipe registrou que entrou em contato por telefone.";
+            await _context.SaveChangesAsync();
+
+            TempData["MensagemSucesso"] = "Contato telefônico registrado no histórico.";
+            return RedirectToAction("Doacoes");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ConfirmarEntrega(int id)
+        {
+            var distribuicao = await _context.Distribuicoes
+                .Include(item => item.Beneficiario)
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (distribuicao == null)
+            {
+                return NotFound();
+            }
+
+            if (distribuicao.Status != "Reservada")
+            {
+                TempData["Erro"] = "Esta distribuição não está mais reservada.";
+                return RedirectToAction("Doacoes");
+            }
+
+            distribuicao.Status = "Entregue";
+            distribuicao.DataEntrega = DateTime.Now;
+            distribuicao.Beneficiario.StatusFila = "Cesta Entregue";
+            await _context.SaveChangesAsync();
+
+            TempData["MensagemSucesso"] = "Entrega registrada no histórico.";
+            return RedirectToAction("Doacoes");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelarDistribuicao(int id)
+        {
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+            var distribuicao = await _context.Distribuicoes
+                .Include(item => item.Beneficiario)
+                .Include(item => item.Itens)
+                .FirstOrDefaultAsync(item => item.Id == id);
+            if (distribuicao == null)
+            {
+                return NotFound();
+            }
+
+            if (distribuicao.Status != "Reservada")
+            {
+                TempData["Erro"] = "Somente reservas ainda não entregues podem ser canceladas.";
+                return RedirectToAction("Doacoes");
+            }
+
+            foreach (var item in distribuicao.Itens)
+            {
+                var alimento = await _context.Alimentos.FirstOrDefaultAsync(candidato =>
+                    candidato.Nome == item.NomeAlimento &&
+                    candidato.CodigoDeBarras == item.CodigoDeBarras &&
+                    candidato.DataVencimento == item.DataVencimento);
+
+                if (alimento == null)
+                {
+                    _context.Alimentos.Add(new Alimento
+                    {
+                        Nome = item.NomeAlimento,
+                        CodigoDeBarras = item.CodigoDeBarras,
+                        DataVencimento = item.DataVencimento,
+                        Quantidade = item.Quantidade
+                    });
+                }
+                else
+                {
+                    alimento.Quantidade += item.Quantidade;
+                }
+            }
+
+            distribuicao.Status = "Cancelada";
+            distribuicao.Beneficiario.StatusFila = "Aguardando";
+            distribuicao.Beneficiario.HorarioRetirada = null;
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            TempData["MensagemSucesso"] = "Reserva cancelada e itens devolvidos ao estoque.";
+            return RedirectToAction("Doacoes");
         }
     }
 }
