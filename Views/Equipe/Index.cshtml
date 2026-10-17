@@ -1,0 +1,50 @@
+@model IEnumerable<OngDoacao.Models.MembroEquipe>
+
+@{
+    ViewData["Title"] = "Gestão de Equipe";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Equipe e Voluntários (RH)</h2>
+        <a href="/Equipe/Cadastrar" class="btn btn-success fw-bold">+ Novo Membro</a>
+    </div>
+
+    @if (TempData["MensagemSucesso"] != null)
+    {
+        <div class="alert alert-success fw-bold">@TempData["MensagemSucesso"]</div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Cargo/Função</th>
+                        <th>Vínculo</th>
+                        <th>Perfil (Login)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model)
+                    {
+                        <tr>
+                            <td class="fw-bold">@p.Nome</td>
+                            <td>@p.CargoOuFuncao</td>
+                            <td>@p.TipoVinculo</td>
+                            <td>
+                                <span class="badge bg-secondary">@p.PerfilAcesso</span>
+                            </td>
+                            <td>
+                                @if(p.Ativo) { <span class="badge bg-success">Ativo</span> }
+                                else { <span class="badge bg-danger">Inativo</span> }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,61 @@
+@model OngDoacao.Models.MembroEquipe
+
+@{
+    ViewData["Title"] = "Cadastrar Membro";
+}
+
+<div class="container mt-4">
+    <div class="card shadow-sm border-0 mx-auto" style="max-width: 800px;">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Cadastrar Novo Usuário/Voluntário</h4>
+        </div>
+        <div class="card-body p-4 bg-light">
+            <form asp-action="Cadastrar" method="post">
+                
+                <h5 class="text-primary border-bottom pb-2 mb-3">Dados Pessoais</h5>
+                <div class="row">
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label fw-bold">Nome Completo</label>
+                        <input asp-for="Nome" class="form-control" required />
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Telefone</label>
+                        <input asp-for="Telefone" class="form-control" placeholder="(11) 99999-9999" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Cargo ou Função</label>
+                        <input asp-for="CargoOuFuncao" class="form-control" placeholder="Ex: Triagem, Motorista..." required />
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Tipo de Vínculo</label>
+                        <select asp-for="TipoVinculo" class="form-select" required>
+                            <option value="Voluntário">Voluntário</option>
+                            <option value="Funcionário Remunerado">Funcionário Remunerado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h5 class="text-primary border-bottom pb-2 mt-4 mb-3">Dados de Acesso (Login)</h5>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-bold">Senha de Acesso</label>
+                        <input asp-for="Senha" type="text" class="form-control" required />
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label fw-bold">Perfil de Acesso no Sistema</label>
+                        <select asp-for="PerfilAcesso" class="form-select" required>
+                            <option value="Estoque">Estoque (Apenas Lê Código de Barras)</option>
+                            <option value="Financeiro">Financeiro (Apenas Livro Caixa)</option>
+                            <option value="Admin">Administrador (Acesso Total)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100 fw-bold">Salvar e Liberar Acesso</button>
+            </form>
+        </div>
+    </div>
+</div>

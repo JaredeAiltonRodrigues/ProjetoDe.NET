@@ -1,0 +1,198 @@
+@model IEnumerable<OngDoacao.Models.Alimento>
+
+@{
+    ViewData["Title"] = "Estoque do armazém";
+
+    // Vencimento é uma data (sem hora): compara com DateTime.Today, para que quem vence hoje ainda conte como válido.
+    var hoje = DateTime.Today;
+    var itens = Model.OrderBy(a => a.DataVencimento).ToList();   // quem vence primeiro aparece primeiro
+    var validos = itens.Where(a => a.DataVencimento.Date >= hoje).Sum(a => a.Quantidade);
+    var vencemEmBreve = itens.Where(a => a.DataVencimento.Date >= hoje && a.DataVencimento.Date <= hoje.AddDays(7)).Sum(a => a.Quantidade);
+    var vencidos = itens.Where(a => a.DataVencimento.Date < hoje).Sum(a => a.Quantidade);
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root { --ink: #17261f; --forest: #1f4d3a; --grain: #e9b93a; --line: #dcd9cd; --alert: #b3261e; }
+    body { font-family: 'Public Sans', system-ui, sans-serif; color: var(--ink); }
+    .armazem h1, .armazem .valor { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; font-weight: 800; letter-spacing: -.02em; }
+    .armazem h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); }
+    .resumo { border: 1px solid var(--line); border-left-width: 6px; border-radius: 4px; padding: 1rem 1.25rem; background: #fff; height: 100%; }
+    .resumo .valor { font-size: 2.2rem; line-height: 1.1; }
+    .resumo.ok { border-left-color: var(--forest); }
+    .resumo.atencao { border-left-color: var(--grain); background: #fff6dc; }
+    .resumo.perigo { border-left-color: var(--alert); }
+    .tabela th { font-weight: 600; white-space: nowrap; background: #f1efe6; }
+    .tabela td { vertical-align: middle; }
+    .tabela .qtd { font-weight: 700; font-size: 1.1rem; }
+    .badge-situacao { display: inline-block; min-width: 8.5rem; padding: .45rem .6rem; border-radius: 4px; font-weight: 600; font-size: .85rem; }
+    .s-valido { background: #dff0e6; color: #14452d; }
+    .s-semana { background: var(--grain); color: var(--ink); }
+    .s-vencido { background: var(--alert); color: #fff; }
+    .btn-forest { background: var(--forest); color: #fff; font-weight: 600; border-radius: 4px; }
+    .btn-forest:hover { background: #17402f; color: #fff; }
+    .btn-check:checked + .btn-outline-dark { background: var(--ink); color: #fff; }
+    :focus-visible { outline: 3px solid var(--grain); outline-offset: 2px; }
+</style>
+
+<div class="container armazem mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h1 class="mb-0">Estoque do armazém</h1>
+        <a asp-controller="Alimentos" asp-action="Cadastro" class="btn btn-forest px-4 py-2">Nova entrada</a>
+    </div>
+
+    @if (TempData["MensagemSucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+
+    <!-- Resumo (em unidades) -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <section class="resumo ok" aria-label="Itens válidos">
+                <div>Itens válidos</div>
+                <div class="valor">@validos</div>
+                <small class="text-muted">Prontos para doação (inclui os que vencem em breve)</small>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="resumo atencao" aria-label="Vencem em 7 dias">
+                <div>Vencem em até 7 dias</div>
+                <div class="valor">@vencemEmBreve</div>
+                <small>Entregar primeiro</small>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="resumo perigo" aria-label="Itens vencidos">
+                <div>Itens vencidos</div>
+                <div class="valor">@vencidos</div>
+                <small class="text-muted">Devem ser descartados</small>
+            </section>
+        </div>
+    </div>
+
+    <!-- Busca e filtro -->
+    <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+        <div class="flex-grow-1" style="min-width: 220px; max-width: 420px;">
+            <label for="busca" class="visually-hidden">Buscar produto ou código de barras</label>
+            <input type="search" id="busca" class="form-control" placeholder="Buscar por nome ou código de barras" autocomplete="off">
+        </div>
+        <div class="btn-group" role="group" aria-label="Filtrar por situação">
+            <input type="radio" class="btn-check" name="filtro" id="f-todos" value="todos" checked>
+            <label class="btn btn-outline-dark" for="f-todos">Todos</label>
+            <input type="radio" class="btn-check" name="filtro" id="f-semana" value="semana">
+            <label class="btn btn-outline-dark" for="f-semana">Vencem em breve</label>
+            <input type="radio" class="btn-check" name="filtro" id="f-vencido" value="vencido">
+            <label class="btn btn-outline-dark" for="f-vencido">Vencidos</label>
+        </div>
+        <span id="contador" class="text-muted ms-auto" aria-live="polite"></span>
+    </div>
+
+    <!-- Tabela -->
+    <div class="table-responsive border rounded">
+        <table class="table table-hover mb-0 tabela">
+            <thead>
+                <tr>
+                    <th scope="col">Produto</th>
+                    <th scope="col">Código de barras</th>
+                    <th scope="col">Validade</th>
+                    <th scope="col" class="text-center">Qtd.</th>
+                    <th scope="col">Situação</th>
+                    <th scope="col"><span class="visually-hidden">Ações</span></th>
+                </tr>
+            </thead>
+            <tbody id="corpo-tabela">
+                @if (!itens.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            O armazém está vazio.
+                            <a asp-controller="Alimentos" asp-action="Cadastro">Registrar a primeira entrada</a>.
+                        </td>
+                    </tr>
+                }
+
+                @foreach (var item in itens)
+                {
+                    var dias = (item.DataVencimento.Date - hoje).Days;
+                    var situacao = dias < 0 ? "vencido" : dias <= 7 ? "semana" : "valido";
+                    var prazo = dias == 0 ? "Vence hoje" : dias == 1 ? "Vence amanhã" : $"Vence em {dias} dias";
+                    var busca = ((item.Nome ?? "") + " " + (item.CodigoDeBarras ?? "")).ToLowerInvariant();
+
+                    <tr class="item-estoque @(situacao == "vencido" ? "table-danger" : "")" data-situacao="@situacao" data-busca="@busca">
+                        <td class="fw-semibold">@item.Nome</td>
+                        <td class="text-muted small">@item.CodigoDeBarras</td>
+                        <td class="text-nowrap">@item.DataVencimento.ToString("dd/MM/yyyy")</td>
+                        <td class="text-center qtd">@item.Quantidade</td>
+                        <td>
+                            @if (situacao == "vencido")
+                            {
+                                <span class="badge-situacao s-vencido">Vencido</span>
+                            }
+                            else if (situacao == "semana")
+                            {
+                                <span class="badge-situacao s-semana">@prazo</span>
+                            }
+                            else
+                            {
+                                <span class="badge-situacao s-valido">Válido</span>
+                            }
+                        </td>
+                        <td class="text-end">
+                            <form asp-action="Remover" method="post" class="form-baixa" data-nome="@item.Nome" data-qtd="@item.Quantidade">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">@(situacao == "vencido" ? "Descartar" : "Dar baixa")</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+                <tr id="sem-resultado" hidden>
+                    <td colspan="6" class="text-center text-muted py-4">Nenhum produto encontrado com esse filtro.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const linhas = Array.from(document.querySelectorAll('.item-estoque'));
+            const busca = document.getElementById('busca');
+            const contador = document.getElementById('contador');
+            const semResultado = document.getElementById('sem-resultado');
+
+            function filtrar() {
+                const termo = busca.value.trim().toLowerCase();
+                const situacao = document.querySelector('input[name="filtro"]:checked').value;
+                let visiveis = 0;
+                linhas.forEach(function (tr) {
+                    const ok = (situacao === 'todos' || tr.dataset.situacao === situacao) &&
+                               (termo === '' || tr.dataset.busca.indexOf(termo) !== -1);
+                    tr.hidden = !ok;
+                    if (ok) visiveis++;
+                });
+                if (semResultado) semResultado.hidden = visiveis !== 0 || linhas.length === 0;
+                contador.textContent = linhas.length ? 'Mostrando ' + visiveis + ' de ' + linhas.length + ' produtos' : '';
+            }
+
+            busca.addEventListener('input', filtrar);
+            document.querySelectorAll('input[name="filtro"]').forEach(function (r) { r.addEventListener('change', filtrar); });
+            filtrar();
+
+            // Confirmação com o nome do produto (a baixa remove o registro do estoque).
+            document.getElementById('corpo-tabela').addEventListener('submit', function (e) {
+                const form = e.target.closest('.form-baixa');
+                if (!form) return;
+                const msg = 'Dar baixa em "' + form.dataset.nome + '" (' + form.dataset.qtd + ' un.)?\nO registro será removido do estoque.';
+                if (!confirm(msg)) e.preventDefault();
+            });
+        })();
+    </script>
+}

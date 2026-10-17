@@ -1,0 +1,164 @@
+@model OngDoacao.Models.Alimento
+
+@{
+    ViewData["Title"] = "Cadastrar alimento no estoque";
+    var hoje = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root { --ink: #17261f; --forest: #1f4d3a; --grain: #e9b93a; --line: #dcd9cd; }
+    body { font-family: 'Public Sans', system-ui, sans-serif; color: var(--ink); }
+    .estoque h1 { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; font-weight: 800; letter-spacing: -.02em; font-size: clamp(1.7rem, 4vw, 2.3rem); }
+    .estoque .painel { border: 1px solid var(--line); border-radius: 4px; background: #fff; padding: 1.5rem; height: 100%; }
+    .estoque .form-label { font-weight: 600; }
+    .estoque .form-control { border-radius: 4px; border-color: #b9b5a6; }
+    .estoque .form-text { color: #5b6660; }
+    #leitor-camera { width: 100%; max-width: 480px; margin: 0 auto; }
+    #leitor-camera button { border-radius: 4px; }
+    .status-leitura { min-height: 1.5rem; margin-top: .75rem; font-weight: 500; }
+    .btn-forest { background: var(--forest); color: #fff; font-weight: 600; border-radius: 4px; padding: .75rem 1.5rem; }
+    .btn-forest:hover { background: #17402f; color: #fff; }
+    .btn-forest:disabled { opacity: .7; }
+    :focus-visible { outline: 3px solid var(--grain); outline-offset: 2px; }
+</style>
+
+<div class="container estoque mt-4 mb-5">
+    <nav aria-label="Navegação">
+        <a asp-controller="Alimentos" asp-action="Index" class="text-decoration-none">&larr; Voltar para o estoque</a>
+    </nav>
+
+    <h1 class="mt-3 mb-4">Cadastrar alimento no estoque</h1>
+
+    @if (TempData["MensagemSucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Leitor -->
+        <div class="col-lg-5">
+            <section class="painel text-center" aria-labelledby="titulo-leitor">
+                <h2 id="titulo-leitor" class="h5">Ler código de barras</h2>
+                <p class="form-text mb-3">Permita o uso da câmera e aponte para o código do produto. Se não funcionar, digite o número no formulário.</p>
+                <div id="leitor-camera"></div>
+                <p id="status-leitura" class="status-leitura" role="status" aria-live="polite"></p>
+                <button type="button" id="btn-outro" class="btn btn-outline-dark" hidden>Ler outro código</button>
+            </section>
+        </div>
+
+        <!-- Formulário -->
+        <div class="col-lg-7">
+            <section class="painel" aria-labelledby="titulo-form">
+                <h2 id="titulo-form" class="h5 mb-3">Dados do produto</h2>
+                <form asp-action="Cadastro" method="post" id="form-alimento">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                    <div class="row">
+                        <div class="col-md-5 mb-3">
+                            <label asp-for="CodigoDeBarras" class="form-label">Código de barras</label>
+                            <input asp-for="CodigoDeBarras" id="campo-codigo" class="form-control" inputmode="numeric" autocomplete="off" placeholder="Leia ou digite" required />
+                            <span asp-validation-for="CodigoDeBarras" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-7 mb-3">
+                            <label asp-for="Nome" class="form-label">Nome do produto</label>
+                            <input asp-for="Nome" class="form-control" placeholder="Ex.: Arroz 5 kg" autocomplete="off" required />
+                            <span asp-validation-for="Nome" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DataVencimento" class="form-label">Data de vencimento</label>
+                            <input asp-for="DataVencimento" type="date" min="@hoje" class="form-control" required />
+                            <div class="form-text">Produtos já vencidos não devem entrar no estoque.</div>
+                            <span asp-validation-for="DataVencimento" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Quantidade" class="form-label">Quantidade recebida</label>
+                            <input asp-for="Quantidade" type="number" min="1" step="1" inputmode="numeric" class="form-control"
+                                   value="@(Model != null && Model.Quantidade > 0 ? Model.Quantidade : 1)" required />
+                            <span asp-validation-for="Quantidade" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button type="submit" id="btn-salvar" class="btn btn-forest">Salvar no estoque</button>
+                        <a asp-controller="Alimentos" asp-action="Index" class="btn btn-outline-dark">Cancelar</a>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script>
+        (function () {
+            const campoCodigo = document.getElementById('campo-codigo');
+            const campoNome = document.getElementById('Nome');
+            const status = document.getElementById('status-leitura');
+            const btnOutro = document.getElementById('btn-outro');
+            let leitor = null;
+            let leituraFeita = false;
+
+            function mostrarStatus(texto, erro) {
+                status.textContent = texto;
+                status.className = 'status-leitura ' + (erro ? 'text-danger' : 'text-success');
+            }
+
+            function aoLerCodigo(texto) {
+                if (leituraFeita) return;                 // ignora leituras repetidas do mesmo código
+                leituraFeita = true;
+                campoCodigo.value = texto;
+                campoCodigo.dispatchEvent(new Event('input', { bubbles: true }));
+                mostrarStatus('Código lido: ' + texto + '. Agora preencha o nome do produto.', false);
+
+                // Desliga a câmera para economizar bateria e libera o botão de nova leitura.
+                leitor.clear().catch(function () {}).finally(function () {
+                    btnOutro.hidden = false;
+                    if (campoNome) campoNome.focus();
+                });
+            }
+
+            function iniciarLeitor() {
+                leituraFeita = false;
+                btnOutro.hidden = true;
+                status.textContent = '';
+                const F = Html5QrcodeSupportedFormats;
+                leitor = new Html5QrcodeScanner('leitor-camera', {
+                    fps: 10,
+                    qrbox: { width: 280, height: 140 },
+                    rememberLastUsedCamera: true,
+                    formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128]
+                }, false);
+                leitor.render(aoLerCodigo, function () { /* quadros sem código: ignorar */ });
+            }
+
+            btnOutro.addEventListener('click', iniciarLeitor);
+
+            if (typeof Html5QrcodeScanner === 'undefined') {
+                mostrarStatus('Não foi possível carregar o leitor. Digite o código manualmente.', true);
+            } else {
+                iniciarLeitor();
+            }
+
+            // Evita cadastro duplicado por clique duplo.
+            document.getElementById('form-alimento').addEventListener('submit', function () {
+                const btn = document.getElementById('btn-salvar');
+                if (this.checkValidity()) {
+                    btn.disabled = true;
+                    btn.textContent = 'Salvando...';
+                }
+            });
+        })();
+    </script>
+}

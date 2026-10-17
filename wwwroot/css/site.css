@@ -1,0 +1,138 @@
+/* ========================================================
+   TEMA GLOBAL: "EDITORIAL MINIMALISTA" (Inspirado no Portfólio)
+   Cores: Preto, Branco, Cinzento e Alto Contraste.
+   Design Flat, sem sombras, com linhas precisas.
+   ======================================================== */
+
+/* Importar fontes modernas, geométricas e limpas */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&family=Inter:wght@300;400;600&display=swap');
+
+body {
+    background-color: #ffffff; /* Fundo branco puro e limpo */
+    font-family: 'Inter', sans-serif;
+    color: #1a1a1a; /* Preto suave para facilitar a leitura */
+}
+
+/* Todos os Títulos com fonte geométrica e espaçamento */
+h1, h2, h3, h4, h5, h6, .navbar-brand, .section-title {
+    font-family: 'Montserrat', sans-serif;
+    color: #000000;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* =========================================
+   COMPONENTES (ESTILO GALERIA DE ARTE)
+   ========================================= */
+
+/* Navbar Preto e Branco */
+.bg-dark {
+    background-color: #000000 !important;
+}
+
+/* Cartões (Cards) - Sem sombras, bordas finas e precisas */
+.card {
+    border-radius: 0 !important; /* Cantos totalmente retos */
+    border: 1px solid #e0e0e0;
+    background-color: #ffffff;
+    box-shadow: none !important; /* Removemos as sombras para um visual flat */
+    transition: border-color 0.3s ease;
+}
+
+.card:hover {
+    border-color: #000000;
+}
+
+.card-header {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #000000;
+    border-radius: 0 !important;
+}
+
+/* Botões com estilo editorial e minimalista */
+.btn {
+    border-radius: 0 !important; 
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-size: 0.75rem;
+    padding: 12px 24px;
+    font-weight: 600;
+    border: 1px solid #000000;
+    transition: all 0.3s ease;
+}
+
+.btn-primary, .btn-dark {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+}
+
+.btn-primary:hover, .btn-dark:hover {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+}
+
+.btn-outline-dark {
+    background-color: transparent !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+}
+
+.btn-outline-dark:hover {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+/* Cores de Ação convertidas para tons monocromáticos */
+.btn-success { background-color: #2b2b2b !important; border-color: #2b2b2b !important; color: #ffffff !important;} 
+.btn-warning { background-color: #f5f5f5 !important; border-color: #d1d1d1 !important; color: #000000 !important;} 
+.btn-danger { background-color: #ffffff !important; border-color: #000000 !important; color: #000000 !important;} 
+
+/* Tabelas estilo relatório minimalista */
+.table {
+    color: #1a1a1a;
+    border-bottom: 1px solid #000000;
+}
+
+.table thead th {
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    background-color: #ffffff !important;
+    border-bottom: 2px solid #000000 !important;
+    color: #000000;
+}
+
+.table-hover tbody tr:hover {
+    background-color: #f9f9f9 !important;
+}
+
+/* Etiquetas (Badges) */
+.badge {
+    border-radius: 0;
+    font-family: 'Inter', sans-serif;
+    padding: 6px 10px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    border: 1px solid #000000;
+}
+.bg-success { background-color: #000000 !important; color: #ffffff !important; border-color: #000000; }
+.bg-warning { background-color: #ffffff !important; color: #000000 !important; border: 1px solid #000000; }
+.bg-danger { background-color: #e0e0e0 !important; color: #000000 !important; border: none; }
+
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    white-space: nowrap;
+    line-height: 60px;
+    border-top: 1px solid #e0e0e0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}

@@ -1,0 +1,158 @@
+﻿@{
+    ViewData["Title"] = "Política de Privacidade";
+
+    // TODO: preencher com os dados reais da ONG.
+    const string razaoSocial = "ONG Alimento para Todos";
+    const string cnpj = "00.000.000/0001-00";
+    const string emailPrivacidade = "privacidade@ongalimento.org.br";
+    const string atualizadoEm = "11 de outubro de 2026";
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root { --ink: #17261f; --forest: #1f4d3a; --grain: #e9b93a; --paper: #fbfaf6; --line: #dcd9cd; }
+    body { font-family: 'Public Sans', system-ui, sans-serif; color: var(--ink); background: var(--paper); }
+    h1, h2 { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; letter-spacing: -.02em; }
+    .policy-head { padding: 56px 0 32px; border-bottom: 1px solid var(--line); }
+    .policy-head h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; line-height: 1.05; }
+    .policy-head p { max-width: 60ch; }
+    .policy-body { padding: 40px 0 72px; }
+    .policy-nav { position: sticky; top: 1.5rem; }
+    .policy-nav a { display: block; padding: .35rem 0 .35rem .9rem; border-left: 3px solid var(--line); color: var(--ink); text-decoration: none; }
+    .policy-nav a:hover { border-left-color: var(--grain); }
+    .policy-section { scroll-margin-top: 1.5rem; max-width: 68ch; margin-bottom: 2.5rem; }
+    .policy-section h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: .75rem; }
+    .policy-section p, .policy-section li { line-height: 1.7; }
+    .policy-table { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+    .policy-table th, .policy-table td { text-align: left; vertical-align: top; padding: .65rem .75rem; border-bottom: 1px solid var(--line); }
+    .policy-table th { font-weight: 600; background: #f1efe6; }
+    .btn-grain { background: var(--grain); color: var(--ink); font-weight: 600; border: 0; border-radius: 4px; padding: .7rem 1.4rem; }
+    .btn-grain:hover { background: #f0c75a; color: var(--ink); }
+    :focus-visible { outline: 3px solid var(--grain); outline-offset: 3px; }
+    html { scroll-behavior: smooth; }
+    @@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @@media (max-width: 991.98px) { .policy-nav { position: static; margin-bottom: 2rem; } }
+</style>
+
+<header class="policy-head">
+    <div class="container">
+        <h1>@ViewData["Title"]</h1>
+        <p class="mt-3 mb-1">Explicamos quais dados pessoais a @razaoSocial coleta, por que coleta e como você pode controlá-los, conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, a LGPD).</p>
+        <p class="text-muted mb-0">Atualizada em @atualizadoEm</p>
+    </div>
+</header>
+
+<div class="policy-body">
+    <div class="container">
+        <div class="row g-5">
+            <nav class="col-lg-3" aria-label="Nesta página">
+                <div class="policy-nav">
+                    <a href="#quem-somos">Quem somos</a>
+                    <a href="#dados">Dados que coletamos</a>
+                    <a href="#finalidades">Por que usamos seus dados</a>
+                    <a href="#compartilhamento">Com quem compartilhamos</a>
+                    <a href="#prazo">Por quanto tempo guardamos</a>
+                    <a href="#direitos">Seus direitos</a>
+                    <a href="#seguranca">Segurança</a>
+                    <a href="#cookies">Cookies</a>
+                    <a href="#menores">Crianças e adolescentes</a>
+                    <a href="#alteracoes">Mudanças nesta política</a>
+                    <a href="#contato">Fale com a gente</a>
+                </div>
+            </nav>
+
+            <main class="col-lg-9">
+                <section id="quem-somos" class="policy-section">
+                    <h2>Quem somos</h2>
+                    <p>A @razaoSocial (CNPJ @cnpj) é a controladora dos dados pessoais tratados neste site, ou seja, quem decide como eles são usados. Atuamos com arrecadação e distribuição de alimentos em Osasco e região.</p>
+                </section>
+
+                <section id="dados" class="policy-section">
+                    <h2>Dados que coletamos</h2>
+                    <p>Coletamos apenas o necessário para cada atividade:</p>
+                    <div class="table-responsive">
+                        <table class="policy-table">
+                            <thead><tr><th scope="col">Quem é você</th><th scope="col">Dados</th></tr></thead>
+                            <tbody>
+                                <tr><td>Família que pede ajuda</td><td>Nome, CPF, contato, endereço, composição da família e informações de renda ou vulnerabilidade, usadas para organizar a fila da cesta básica.</td></tr>
+                                <tr><td>Doador</td><td>Nome, contato e valor doado. Os dados do pagamento são tratados pelo banco ou pelo meio de pagamento, não ficam conosco.</td></tr>
+                                <tr><td>Voluntário ou colaborador</td><td>Nome, contato, documentos de cadastro e disponibilidade.</td></tr>
+                                <tr><td>Visitante do site</td><td>Endereço IP, tipo de navegador e páginas acessadas, por meio de cookies.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="mt-3">Não vendemos nem alugamos seus dados.</p>
+                </section>
+
+                <section id="finalidades" class="policy-section">
+                    <h2>Por que usamos seus dados</h2>
+                    <ul>
+                        <li><strong>Entregar cestas básicas:</strong> cadastrar famílias, organizar a fila e avisar quando a cesta estiver liberada. Base legal: execução da atividade da ONG e consentimento.</li>
+                        <li><strong>Receber e prestar contas das doações:</strong> emitir recibos e publicar relatórios financeiros sem identificar doadores. Base legal: obrigação legal e legítimo interesse.</li>
+                        <li><strong>Organizar voluntários e equipe:</strong> escalas, contato e controle interno. Base legal: execução de contrato ou consentimento.</li>
+                        <li><strong>Manter o site seguro e funcionando:</strong> prevenir fraudes e medir o uso. Base legal: legítimo interesse.</li>
+                    </ul>
+                </section>
+
+                <section id="compartilhamento" class="policy-section">
+                    <h2>Com quem compartilhamos</h2>
+                    <p>Compartilhamos dados somente quando necessário, com:</p>
+                    <ul>
+                        <li>fornecedores de tecnologia que hospedam o sistema e processam pagamentos, sob contrato de proteção de dados;</li>
+                        <li>órgãos públicos ou autoridades, quando a lei exigir ou houver ordem judicial;</li>
+                        <li>parceiros de assistência social, apenas com o seu consentimento.</li>
+                    </ul>
+                </section>
+
+                <section id="prazo" class="policy-section">
+                    <h2>Por quanto tempo guardamos</h2>
+                    <p>Guardamos os dados enquanto você participar das nossas atividades e, depois, pelo prazo exigido por lei (por exemplo, registros financeiros e fiscais). Passado esse prazo, apagamos ou anonimizamos as informações.</p>
+                </section>
+
+                <section id="direitos" class="policy-section">
+                    <h2>Seus direitos</h2>
+                    <p>Você pode pedir, a qualquer momento e sem custo:</p>
+                    <ul>
+                        <li>confirmação de que tratamos seus dados e acesso a eles;</li>
+                        <li>correção de dados incompletos ou desatualizados;</li>
+                        <li>anonimização, bloqueio ou exclusão de dados desnecessários;</li>
+                        <li>portabilidade dos dados;</li>
+                        <li>informação sobre com quem compartilhamos;</li>
+                        <li>retirada do consentimento, o que não afeta o uso feito antes do pedido.</li>
+                    </ul>
+                    <p>Se achar que seus direitos não foram respeitados, você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).</p>
+                </section>
+
+                <section id="seguranca" class="policy-section">
+                    <h2>Segurança</h2>
+                    <p>Limitamos o acesso aos dados a quem precisa deles para o trabalho, protegemos o sistema com login e conexão segura (HTTPS) e orientamos voluntários sobre sigilo. Nenhum sistema é totalmente imune a falhas. Se ocorrer um incidente que ofereça risco a você, avisaremos você e a ANPD.</p>
+                </section>
+
+                <section id="cookies" class="policy-section">
+                    <h2>Cookies</h2>
+                    <p>Usamos cookies essenciais para o site funcionar (como o login da equipe) e, se ativados, cookies de estatística para entender quais páginas são mais úteis. Você pode bloquear cookies nas configurações do navegador, mas algumas áreas podem deixar de funcionar.</p>
+                </section>
+
+                <section id="menores" class="policy-section">
+                    <h2>Crianças e adolescentes</h2>
+                    <p>Dados de menores de 18 anos, como os integrantes de uma família cadastrada, são tratados no melhor interesse deles e com o consentimento de pelo menos um dos pais ou responsáveis.</p>
+                </section>
+
+                <section id="alteracoes" class="policy-section">
+                    <h2>Mudanças nesta política</h2>
+                    <p>Se mudarmos como tratamos seus dados, atualizaremos esta página e a data no topo. Em mudanças importantes, avisaremos também por e-mail ou no site.</p>
+                </section>
+
+                <section id="contato" class="policy-section">
+                    <h2>Fale com a gente</h2>
+                    <p>Para exercer seus direitos ou tirar dúvidas, escreva para o nosso encarregado de proteção de dados. Respondemos em até 15 dias.</p>
+                    <a href="mailto:@emailPrivacidade" class="btn btn-grain">Enviar e-mail para @emailPrivacidade</a>
+                    <p class="mt-3 mb-0">Ou venha à nossa sede: Rua da Esperança, 123, Osasco, SP.</p>
+                </section>
+            </main>
+        </div>
+    </div>
+</div>

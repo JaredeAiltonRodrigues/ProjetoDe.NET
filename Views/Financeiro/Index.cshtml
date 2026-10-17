@@ -1,0 +1,168 @@
+@model IEnumerable<OngDoacao.Models.TransacaoFinanceira>
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Contabilidade e Open Finance";
+
+    var br = new CultureInfo("pt-BR");
+    var lista = Model.ToList();                       // evita enumerar a coleção várias vezes
+    decimal saldo = ViewBag.SaldoTotal ?? 0m;
+    int pendentes = ViewBag.PendenteNfe ?? 0;
+    decimal entradas = lista.Where(t => t.Tipo == "Entrada").Sum(t => t.Valor);
+    decimal saidas = lista.Where(t => t.Tipo != "Entrada").Sum(t => t.Valor);
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root { --ink: #17261f; --forest: #1f4d3a; --grain: #e9b93a; --line: #dcd9cd; --alert: #b3261e; }
+    body { font-family: 'Public Sans', system-ui, sans-serif; color: var(--ink); }
+    .fin h1, .fin .valor { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; font-weight: 800; letter-spacing: -.02em; }
+    .fin h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); }
+    .resumo { border: 1px solid var(--line); border-radius: 4px; padding: 1.25rem 1.5rem; height: 100%; background: #fff; }
+    .resumo .valor { font-size: 2rem; line-height: 1.15; margin: .25rem 0; }
+    .resumo.destaque { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .resumo.destaque .valor { color: var(--grain); }
+    .resumo.destaque .valor.negativo { color: #ff9a92; }
+    .resumo.atencao { background: #fff6dc; border-color: var(--grain); }
+    .positivo { color: var(--forest); }
+    .negativo { color: var(--alert); }
+    .tabela th { font-weight: 600; white-space: nowrap; background: #f1efe6; }
+    .tabela td { vertical-align: middle; }
+    .btn-forest { background: var(--forest); color: #fff; font-weight: 600; border-radius: 4px; }
+    .btn-forest:hover { background: #17402f; color: #fff; }
+    :focus-visible { outline: 3px solid var(--grain); outline-offset: 2px; }
+    @@media print {
+        .no-print, nav, footer { display: none !important; }
+        .resumo, .resumo.destaque { background: #fff !important; color: #000 !important; border: 1px solid #999; }
+        .resumo.destaque .valor { color: #000 !important; }
+        .table-responsive { overflow: visible !important; }
+    }
+</style>
+
+<div class="container fin mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h1 class="mb-0">Contabilidade e Open Finance</h1>
+        <div class="d-flex flex-wrap gap-2 no-print">
+            <button type="button" onclick="window.print()" class="btn btn-outline-dark fw-semibold">Exportar para PDF</button>
+            <a asp-controller="Financeiro" asp-action="NovaTransacao" class="btn btn-forest">Novo registro manual</a>
+        </div>
+    </div>
+
+    @if (TempData["MensagemSucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show no-print" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+
+    <!-- Resumo -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <section class="resumo destaque" aria-label="Saldo em conta">
+                <div>Saldo em conta (livro caixa)</div>
+                <div class="valor @(saldo < 0 ? "negativo" : "")">@saldo.ToString("C2", br)</div>
+                <small>Sincronizado com o Open Finance</small>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="resumo" aria-label="Entradas e saídas">
+                <div>Movimentação listada</div>
+                <div class="valor positivo">+ @entradas.ToString("C2", br)</div>
+                <div class="negativo fw-semibold">− @saidas.ToString("C2", br)</div>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="resumo @(pendentes > 0 ? "atencao" : "")" aria-label="Notas fiscais pendentes">
+                <div>Notas fiscais (SEFAZ)</div>
+                <div class="valor">@pendentes @(pendentes == 1 ? "pendente" : "pendentes")</div>
+                <small>@(pendentes > 0 ? "Aguardando emissão ou autorização" : "Nenhuma nota aguardando emissão")</small>
+            </section>
+        </div>
+    </div>
+
+    <!-- Movimentos -->
+    <section aria-labelledby="titulo-historico">
+        <h2 id="titulo-historico" class="h5 mb-3">Histórico de transações e PIX</h2>
+        <div class="table-responsive border rounded">
+            <table class="table table-hover mb-0 tabela">
+                <thead>
+                    <tr>
+                        <th scope="col">Data</th>
+                        <th scope="col">Descrição e pagador</th>
+                        <th scope="col">Tipo</th>
+                        <th scope="col" class="text-end">Valor</th>
+                        <th scope="col">Conciliação</th>
+                        <th scope="col">Nota fiscal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!lista.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                Nenhuma transação registrada ainda.
+                                <a asp-controller="Financeiro" asp-action="NovaTransacao">Adicionar o primeiro registro</a>.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var t in lista)
+                    {
+                        bool entrada = t.Tipo == "Entrada";
+                        string chave = t.ChaveAcessoNFe;
+                        string chaveCurta = chave is { Length: > 10 } ? chave[..10] + "…" : chave;
+
+                        <tr>
+                            <td class="text-nowrap">@t.DataTransacao.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <strong>@t.Descricao</strong><br>
+                                <small class="text-muted">Origem: @(t.IdentificacaoPagador ?? "Não identificada")</small>
+                            </td>
+                            <td>
+                                <span class="badge @(entrada ? "bg-success" : "bg-danger")">@(entrada ? "Entrada" : "Saída")</span>
+                            </td>
+                            <td class="fw-bold text-end text-nowrap @(entrada ? "positivo" : "negativo")">
+                                @(entrada ? "+" : "−") @t.Valor.ToString("C2", br)
+                            </td>
+                            <td>
+                                @if (t.Conciliado)
+                                {
+                                    <span class="positivo fw-semibold">Confirmada</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning text-dark">Pendente</span>
+                                }
+                            </td>
+                            <td>
+                                @if (!t.ExigeNotaFiscal)
+                                {
+                                    <span class="text-muted">Não exige</span>
+                                }
+                                else if (t.StatusSefaz == "Pendente")
+                                {
+                                    <form asp-action="SimularEmissaoNfe" method="post" class="no-print">
+                                        <input type="hidden" name="id" value="@t.Id" />
+                                        <button type="submit" class="btn btn-sm btn-forest">Simular emissão da NF-e</button>
+                                    </form>
+                                }
+                                else if (t.StatusSefaz == "Emitida")
+                                {
+                                    <span class="badge bg-success">Emitida</span>
+                                    <small class="text-muted d-block" title="@chave">Chave: @chaveCurta</small>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">@t.StatusSefaz</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>

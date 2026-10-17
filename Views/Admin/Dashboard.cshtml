@@ -1,0 +1,201 @@
+@model OngDoacao.Models.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Painel de gestão";
+
+    var aguardando = Model.Fila.Count(p => p.StatusFila == "Aguardando");
+    var previstos = Model.BeneficiariosPrevistos;
+    var podeLiberar = Model.CestasDisponiveis > 0 && previstos.Count > 0;
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    :root { --ink: #17261f; --forest: #1f4d3a; --grain: #e9b93a; --line: #dcd9cd; }
+    body { font-family: 'Public Sans', system-ui, sans-serif; color: var(--ink); }
+    .painel-gestao h1, .painel-gestao h2, .painel-gestao .valor { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; font-weight: 800; letter-spacing: -.02em; }
+    .painel-gestao h1 { font-size: clamp(1.7rem, 4vw, 2.3rem); }
+    .painel-gestao h2 { font-size: 1.4rem; }
+    .resumo { border: 1px solid var(--line); border-left: 6px solid var(--forest); border-radius: 4px; padding: 1rem 1.25rem; background: #fff; height: 100%; }
+    .resumo .valor { font-size: 2.6rem; line-height: 1.1; }
+    .resumo.destaque { background: var(--ink); color: #fff; border-color: var(--ink); border-left-color: var(--grain); }
+    .resumo.destaque .valor { color: var(--grain); }
+    .bloco { border: 1px solid var(--line); border-radius: 4px; background: #fff; padding: 1.5rem; height: 100%; }
+    .sugestao { border-left: 4px solid var(--grain); background: #fff6dc; padding: .9rem 1rem; border-radius: 0 4px 4px 0; }
+    .tabela th { font-weight: 600; white-space: nowrap; background: #f1efe6; }
+    .tabela td { vertical-align: middle; }
+    .btn-forest { background: var(--forest); color: #fff; font-weight: 600; border-radius: 4px; padding: .8rem 1.5rem; }
+    .btn-forest:hover:not(:disabled) { background: #17402f; color: #fff; }
+    .btn-forest:disabled { background: #9aa8a0; color: #fff; }
+    .atalhos .btn { border-radius: 4px; font-weight: 600; }
+    :focus-visible { outline: 3px solid var(--grain); outline-offset: 2px; }
+</style>
+
+<div class="container painel-gestao mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h1 class="mb-0">Painel de gestão</h1>
+        <nav class="atalhos d-flex flex-wrap gap-2" aria-label="Áreas do sistema">
+            <a asp-controller="Alimentos" asp-action="Index" class="btn btn-outline-dark">Estoque</a>
+            <a asp-controller="Financeiro" asp-action="Index" class="btn btn-outline-dark">Financeiro</a>
+            <a asp-controller="Equipe" asp-action="Index" class="btn btn-outline-dark">Equipe (RH)</a>
+        </nav>
+    </div>
+
+    @if (TempData["MensagemSucesso"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="status">
+            @TempData["MensagemSucesso"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+    @if (TempData["Erro"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Erro"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar aviso"></button>
+        </div>
+    }
+
+    <!-- Resumo -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <section class="resumo" aria-label="Estoque atual">
+                <div>Itens válidos no estoque</div>
+                <div class="valor">@Model.TotalItensEstoque</div>
+                <small class="text-muted">Itens dentro da validade</small>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="resumo destaque" aria-label="Cestas possíveis">
+                <div>Cestas possíveis</div>
+                <div class="valor">@Model.CestasDisponiveis</div>
+                <small>Regra: 5 itens formam 1 cesta</small>
+            </section>
+        </div>
+        <div class="col-md-4">
+            <section class="resumo" aria-label="Fila de espera">
+                <div>Famílias aguardando</div>
+                <div class="valor">@aguardando</div>
+                <small class="text-muted">Na fila de beneficiários</small>
+            </section>
+        </div>
+    </div>
+
+    <!-- Distribuição -->
+    <section class="mb-4" aria-labelledby="titulo-distribuicao">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="bloco">
+                    <h2 id="titulo-distribuicao" class="mb-3">Plano de distribuição</h2>
+
+                    @if (Model.AssistenteDisponivel)
+                    {
+                        <div class="sugestao mb-3">
+                            <div class="fw-semibold mb-1">Sugestão do assistente</div>
+                            <div>@Model.SugestaoIA</div>
+                            <small class="text-muted d-block mt-2">Gerada automaticamente. Revise antes de confirmar.</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning" role="status">
+                            @(Model.SugestaoIA ?? "O assistente não está disponível no momento.")
+                            <div class="mt-1 small">O plano abaixo continua disponível para revisão e confirmação manual.</div>
+                        </div>
+                    }
+
+                    <h3 class="h6 fw-bold">Beneficiários previstos <span class="fw-normal text-muted">(mais antigos primeiro)</span></h3>
+                    @if (previstos.Count == 0)
+                    {
+                        <p class="mb-0 text-muted">Não há cestas suficientes ou famílias aguardando.</p>
+                    }
+                    else
+                    {
+                        <ol class="mb-0">
+                            @foreach (var b in previstos)
+                            {
+                                <li>@b.Nome, família com @b.TamanhoFamilia @(b.TamanhoFamilia == 1 ? "pessoa" : "pessoas")</li>
+                            }
+                        </ol>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="bloco d-flex flex-column">
+                    <h2 class="mb-3">Confirmar entrega</h2>
+                    <p>A lista segue a ordem de cadastro. As cestas só são distribuídas depois que você confirmar.</p>
+                    <form asp-action="LiberarCestas" method="post" id="form-liberar" class="mt-auto"
+                          data-confirm="Liberar @previstos.Count @(previstos.Count == 1 ? "cesta" : "cestas") para os beneficiários listados? Essa ação não pode ser desfeita.">
+                        <button type="submit" class="btn btn-forest w-100" disabled="@(!podeLiberar)">Confirmar distribuição manual</button>
+                        @if (!podeLiberar)
+                        {
+                            <div class="form-text mt-2">Disponível quando houver cestas e famílias aguardando.</div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fila -->
+    <section aria-labelledby="titulo-fila">
+        <h2 id="titulo-fila" class="mb-3">Fila de beneficiários</h2>
+        <div class="table-responsive border rounded">
+            <table class="table table-hover mb-0 tabela">
+                <thead>
+                    <tr>
+                        <th scope="col">Nome</th>
+                        <th scope="col">Família</th>
+                        <th scope="col">Cadastro</th>
+                        <th scope="col">Situação</th>
+                        <th scope="col">Retirada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Fila.Any())
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">Nenhum beneficiário cadastrado ainda.</td></tr>
+                    }
+                    @foreach (var p in Model.Fila)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@p.Nome</td>
+                            <td>@p.TamanhoFamilia @(p.TamanhoFamilia == 1 ? "pessoa" : "pessoas")</td>
+                            <td class="text-nowrap">@p.DataCadastro.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                @if (p.StatusFila == "Aguardando")
+                                {
+                                    <span class="badge bg-warning text-dark">@p.StatusFila</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">@p.StatusFila</span>
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                @(p.HorarioRetirada.HasValue ? p.HorarioRetirada.Value.ToString("dd/MM/yyyy 'às' HH:mm") : "Não definido")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        // Confirmação antes de liberar as cestas e proteção contra clique duplo.
+        document.getElementById('form-liberar').addEventListener('submit', function (e) {
+            if (!confirm(this.dataset.confirm)) {
+                e.preventDefault();
+                return;
+            }
+            const btn = this.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.textContent = 'Liberando...';
+        });
+    </script>
+}
