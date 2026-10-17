@@ -1,13 +1,5 @@
-﻿@using System.Globalization
-@{
+﻿@{
     ViewData["Title"] = "Início - ONG Alimento para Todos";
-
-    // Troque pelos valores reais (ex.: vindos do banco via controller/ViewModel).
-    int cestas = ViewBag.Cestas ?? 500;
-    decimal arrecadado = ViewBag.Arrecadado ?? 12000m;
-    int voluntarios = ViewBag.Voluntarios ?? 45;
-    var br = new CultureInfo("pt-BR");
-    const string chavePix = "contato@ongalimento.org.br"; // TODO: chave PIX real
 }
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,32 +15,35 @@
         --line: #dcd9cd;
     }
     body { font-family: 'Public Sans', system-ui, sans-serif; color: var(--ink); background: var(--paper); }
-    h1, h2, h3 { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; letter-spacing: -.02em; }
+    h1, h2, h3 { font-family: 'Bricolage Grotesque', 'Public Sans', sans-serif; color: var(--ink); text-transform: none; letter-spacing: 0; }
     .hero { padding: 72px 0 56px; }
-    .hero h1 { font-size: clamp(2.6rem, 7vw, 5rem); font-weight: 800; line-height: 1; }
+    .hero h1 { font-size: 4rem; font-weight: 800; line-height: 1.05; }
     .hero p.lead { max-width: 34ch; }
     .hero-img { width: 100%; height: 100%; min-height: 320px; max-height: 480px; object-fit: cover; border-radius: 4px; }
-    .btn-grain { background: var(--grain); color: var(--ink); font-weight: 600; border: 0; border-radius: 4px; padding: .8rem 1.6rem; }
+    .btn-grain { background: var(--grain); color: var(--ink); font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 1rem; border: 0; border-radius: 4px; padding: .8rem 1.6rem; }
     .btn-grain:hover { background: #f0c75a; color: var(--ink); }
-    .btn-line { border: 2px solid var(--ink); color: var(--ink); font-weight: 600; border-radius: 4px; padding: .7rem 1.5rem; }
+    .btn-line { border: 2px solid var(--ink); color: var(--ink); font-weight: 600; text-transform: none; letter-spacing: 0; font-size: 1rem; border-radius: 4px; padding: .7rem 1.5rem; }
     .btn-line:hover { background: var(--ink); color: #fff; }
     .section { padding: 64px 0; }
-    .section h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); font-weight: 800; }
+    .section h2 { font-size: 2.4rem; font-weight: 800; }
     .frente img { width: 100%; height: 220px; object-fit: cover; border-radius: 4px; }
     .frente h3 { font-size: 1.3rem; font-weight: 800; margin-top: 1rem; }
     .frente p { max-width: 38ch; }
     .doar { background: var(--forest); color: #fff; border-radius: 4px; padding: 2.5rem; }
     .doar h2 { color: #fff; }
-    .pix-box { display: flex; gap: .5rem; align-items: stretch; margin-top: 1.25rem; }
-    .pix-box code { flex: 1; background: rgba(255,255,255,.12); color: #fff; padding: .75rem 1rem; border-radius: 4px; overflow-wrap: anywhere; }
-    .outras { border-top: 1px solid var(--line); padding-top: 1.25rem; margin-top: 1.25rem; }
-    .impacto { background: var(--ink); color: #fff; padding: 48px 0; }
-    .impacto strong { font-family: 'Bricolage Grotesque', sans-serif; font-size: 2.4rem; font-weight: 800; color: var(--grain); display: block; line-height: 1.1; }
-    .equipe { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 1.25rem 0; }
-    .equipe a { color: var(--ink); font-weight: 600; margin-right: 1.5rem; }
+    .doar p { max-width: 56ch; }
+    .apoio-alternativo { border: 2px solid var(--ink); border-radius: 4px; padding: 2.5rem; }
     .site-footer { background: var(--forest); color: #fff; padding: 56px 0 32px; }
-    .site-footer a { color: #fff; }
+    .site-footer a, .site-footer h2 { color: #fff; }
+    .navbar-dark .navbar-brand { color: #fff; }
     :focus-visible { outline: 3px solid var(--grain); outline-offset: 3px; }
+    @@media (max-width: 767px) {
+        .hero { padding: 48px 0 40px; }
+        .hero .row, .section .row { --bs-gutter-x: 1.5rem; }
+        .hero h1 { font-size: 2.75rem; }
+        .section h2 { font-size: 2rem; }
+        .doar, .apoio-alternativo { padding: 1.5rem; }
+    }
     @@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
     html { scroll-behavior: smooth; }
 </style>
@@ -67,8 +62,8 @@
             </div>
             <div class="col-lg-6">
                 <img class="hero-img"
-                     src="https://images.unsplash.com/photo-1593113580332-ce148dd41699?auto=format&fit=crop&w=1000&q=80"
-                     alt="Voluntários separando alimentos para as cestas básicas">
+                     src="@Url.Content("~/images/food-market.jpg")"
+                     alt="Alimentos frescos organizados em bancadas de mercado">
             </div>
         </div>
     </div>
@@ -81,17 +76,17 @@
             <h2 id="titulo-atuacao" class="mb-5">Como atuamos</h2>
             <div class="row g-5">
                 <div class="col-md-4 frente">
-                    <img src="https://images.unsplash.com/photo-1618258525381-80a5682b13ee?auto=format&fit=crop&w=600&q=80" alt="Alimentos não perecíveis organizados" loading="lazy">
+                    <img src="@Url.Content("~/images/food-bank.jpg")" alt="Legumes e verduras organizados para doação" loading="lazy">
                     <h3>Banco de alimentos</h3>
                     <p>Recebemos itens não perecíveis, controlamos a validade e montamos as cestas básicas.</p>
                 </div>
                 <div class="col-md-4 frente">
-                    <img src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&w=600&q=80" alt="Mãos entregando uma doação" loading="lazy">
-                    <h3>Apoio financeiro</h3>
-                    <p>As doações em dinheiro compram a mistura (proteínas) e pagam a logística das entregas.</p>
+                    <img src="@Url.Content("~/images/donation.jpg")" alt="Voluntário participando de uma ação de doação" loading="lazy">
+                    <h3>Apoio às famílias</h3>
+                    <p>O cadastro permite encaminhar pedidos de apoio para avaliação da equipe da ONG.</p>
                 </div>
                 <div class="col-md-4 frente">
-                    <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80" alt="Grupo de voluntários sorrindo" loading="lazy">
+                    <img src="@Url.Content("~/images/volunteers.jpg")" alt="Grupo de pessoas reunindo as mãos em apoio comunitário" loading="lazy">
                     <h3>Rede de voluntários</h3>
                     <p>Voluntários ajudam na triagem, na entrega e na administração. Quem tem tempo é bem-vindo.</p>
                 </div>
@@ -105,86 +100,28 @@
             <div class="row g-4">
                 <div class="col-lg-7">
                     <div class="doar h-100">
-                        <h2 id="titulo-ajudar">Faça uma doação</h2>
-                        <p class="mt-3 mb-0">Pelo PIX, a doação cai direto na conta da ONG e vira alimento. Copie a chave e pague no app do seu banco.</p>
-                        <div class="pix-box">
-                            <code id="chave-pix">@chavePix</code>
-                            <button type="button" id="btn-copiar" class="btn btn-grain" aria-live="polite">Copiar chave</button>
-                        </div>
-                        <div class="outras">
-                            <p class="mb-2">Prefere doar alimentos? Leve até a nossa sede no horário de triagem.</p>
-                            <a href="#contato" class="text-white fw-semibold">Ver endereço e horários</a>
-                        </div>
+                        <h2 id="titulo-ajudar">Contribua com segurança</h2>
+                        <p class="mt-3 mb-0">Os canais oficiais para doações ainda não foram informados nesta página. Confirme os dados diretamente com a ONG antes de transferir dinheiro ou entregar alimentos.</p>
                     </div>
                 </div>
                 <div class="col-lg-5">
                     <div class="h-100 p-4 p-lg-5" style="border:2px solid var(--ink); border-radius:4px;">
                         <h2 class="h3 fw-bold">Precisa de ajuda?</h2>
-                        <p class="mt-3">Cadastre sua família na fila da cesta básica. Nossa equipe entra em contato quando a cesta estiver liberada.</p>
-                        <a asp-controller="Beneficiarios" asp-action="Cadastro" class="btn btn-line mt-2">Entrar na fila da cesta</a>
+                        <p class="mt-3">Registre um pedido de apoio para avaliação da equipe da ONG.</p>
+                        <a asp-controller="Beneficiarios" asp-action="Cadastro" class="btn btn-line mt-2">Solicitar avaliação</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- TRANSPARÊNCIA -->
-    <section class="impacto" aria-labelledby="titulo-impacto">
-        <div class="container">
-            <h2 id="titulo-impacto" class="h4 mb-4">Transparência: o que fizemos este ano</h2>
-            <div class="row g-4">
-                <div class="col-md-4"><strong>@cestas.ToString("N0", br)</strong>cestas básicas entregues</div>
-                <div class="col-md-4"><strong>@arrecadado.ToString("C0", br)</strong>arrecadados e usados em alimentos e necessidades básicas</div>
-                <div class="col-md-4"><strong>@voluntarios</strong>voluntários ativos</div>
-            </div>
-            <a href="#" class="d-inline-block mt-4 text-white">Ver relatório financeiro completo</a>
-        </div>
-    </section>
-
-    <!-- ÁREA DA EQUIPE -->
-    <section class="equipe" aria-label="Área da equipe">
-        <div class="container">
-            <span class="me-3">Equipe da ONG:</span>
-            <a asp-controller="Alimentos" asp-action="Index">Estoque de alimentos</a>
-            <a asp-controller="Admin" asp-action="Dashboard">Painel do gestor</a>
-        </div>
-    </section>
 </main>
 
-<!-- RODAPÉ (o ideal é mover para _Layout.cshtml, para valer em todas as páginas) -->
-<footer id="contato" class="site-footer">
+<footer class="site-footer">
     <div class="container">
-        <div class="row g-4">
-            <div class="col-md-4">
-                <h2 class="h5 fw-bold">ONG Alimento para Todos</h2>
-                <address class="mb-0">
-                    Rua da Esperança, 123<br>Osasco, SP<br><br>
-                    <a href="tel:+5511999999999">(11) 99999-9999</a><br>
-                    <a href="mailto:contato@ongalimento.org.br">contato@ongalimento.org.br</a>
-                </address>
-            </div>
-            <div class="col-md-4">
-                <h2 class="h5 fw-bold">Horário de triagem</h2>
-                <p class="mb-0">Segunda a sexta: 9h às 18h<br>Sábado: 9h às 12h</p>
-            </div>
-            <div class="col-md-4">
-                <h2 class="h5 fw-bold">Transparência</h2>
-                <a href="#" class="d-block mb-2">Relatório financeiro</a>
-                <a href="#" class="d-block">Portal do voluntário</a>
-            </div>
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+            <h2 class="h5 fw-bold mb-0">ONG Alimento para Todos</h2>
+            <a asp-controller="Home" asp-action="Privacy">Política de privacidade</a>
         </div>
     </div>
 </footer>
-
-<script>
-    document.getElementById('btn-copiar').addEventListener('click', async function () {
-        const btn = this;
-        try {
-            await navigator.clipboard.writeText(document.getElementById('chave-pix').textContent.trim());
-            btn.textContent = 'Chave copiada';
-        } catch {
-            btn.textContent = 'Copie manualmente';
-        }
-        setTimeout(() => btn.textContent = 'Copiar chave', 2500);
-    });
-</script>

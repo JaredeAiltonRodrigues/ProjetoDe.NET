@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,7 +11,7 @@
 <body>
     <header>
         <!-- Menu totalmente preto com letras brancas (Alto Contraste) -->
-        <nav class="navbar navbar-expand-sm navbar-dark bg-dark py-3 border-0 mb-5">
+        <nav class="navbar navbar-expand-sm navbar-dark bg-dark py-3 border-0">
             <div class="container-fluid px-4">
                 <a class="navbar-brand fs-4" asp-area="" asp-controller="Home" asp-action="Index">
                     ALIMENTO <span class="fs-6 d-block" style="font-family:'Inter',sans-serif; font-weight:300; letter-spacing: 4px; color: #a0a0a0;">PARA TODOS</span>
@@ -69,11 +69,9 @@
         </nav>
     </header>
 
-    <div class="container pb-5">
-        <main role="main">
-            @RenderBody()
-        </main>
-    </div>
+    <main role="main">
+        @RenderBody()
+    </main>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>

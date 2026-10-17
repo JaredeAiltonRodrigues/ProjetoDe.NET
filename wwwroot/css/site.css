@@ -31,6 +31,10 @@ h1, h2, h3, h4, h5, h6, .navbar-brand, .section-title {
     background-color: #000000 !important;
 }
 
+.navbar-dark .navbar-brand {
+    color: #ffffff;
+}
+
 /* Cartões (Cards) - Sem sombras, bordas finas e precisas */
 .card {
     border-radius: 0 !important; /* Cantos totalmente retos */
